@@ -123,12 +123,15 @@ function LoginView({ onLogin }) {
   );
 }
 
-function DashboardView() {
+function RoleSelectionView({ onLogout, onRoleSelect }) {
   return (
     <main className="dashboard-wrapper">
       <div className="bg-glow"></div>
-      <nav className="navbar">
+      <nav className="navbar" style={{ justifyContent: 'space-between' }}>
         <img src="/logo.png" alt="Bugsentry Logo" className="logo" />
+        <button onClick={onLogout} className="logout-btn" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s', fontSize: '13px' }}>
+          Sign Out
+        </button>
       </nav>
 
       <div className="dashboard-content">
@@ -136,7 +139,7 @@ function DashboardView() {
         
         <div className="role-cards-container">
           {/* Developer Mode Card */}
-          <div className="role-card">
+          <div className="role-card" onClick={() => onRoleSelect('developer')}>
             <div className="role-icon">
               <FaCode />
             </div>
@@ -145,7 +148,7 @@ function DashboardView() {
           </div>
 
           {/* CEO Mode Card */}
-          <div className="role-card">
+          <div className="role-card" onClick={() => onRoleSelect('ceo')}>
             <div className="role-icon">
               <FaBriefcase />
             </div>
@@ -158,15 +161,60 @@ function DashboardView() {
   );
 }
 
+function WorkspaceView({ role, onLogout, onBack }) {
+  const isDev = role === 'developer';
+  
+  return (
+    <main className="dashboard-wrapper">
+      <div className="bg-glow"></div>
+      <nav className="navbar" style={{ justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <img src="/logo.png" alt="Bugsentry Logo" className="logo" />
+          <button className="auth-btn" onClick={onBack} style={{ height: '36px', padding: '0 16px', borderRadius: '8px', background: 'transparent' }}>← Switch Role</button>
+        </div>
+        <button onClick={onLogout} className="logout-btn" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s', fontSize: '13px' }}>
+          Sign Out
+        </button>
+      </nav>
+      
+      <div className="workspace-content animate-zoom-in">
+         <div className="workspace-icon" style={{ color: isDev ? '#58A6FF' : '#9b51e0' }}>
+           {isDev ? <FaCode size={64} /> : <FaBriefcase size={64} />}
+         </div>
+         <h1 className="workspace-title">
+           {isDev ? 'Developer Environment' : 'CEO Executive Dashboard'}
+         </h1>
+         <p className="workspace-subtitle">
+           {isDev 
+             ? 'Connected to live source control. Actively monitoring pipeline health, critical dependencies, and trace logs.' 
+             : 'Aggregated organization risk posture, deployment velocity metrics, and compliance analytics.'}
+         </p>
+         <button className="hologram-btn">
+             Initialize Workspace
+         </button>
+      </div>
+    </main>
+  );
+}
+
+
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [activeRole, setActiveRole] = useState(null);
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setActiveRole(null);
+  }
 
   return (
     <>
       {!isLoggedIn ? (
         <LoginView onLogin={() => setIsLoggedIn(true)} />
+      ) : !activeRole ? (
+        <RoleSelectionView onLogout={handleLogout} onRoleSelect={setActiveRole} />
       ) : (
-        <DashboardView />
+        <WorkspaceView role={activeRole} onLogout={handleLogout} onBack={() => setActiveRole(null)} />
       )}
     </>
   );
