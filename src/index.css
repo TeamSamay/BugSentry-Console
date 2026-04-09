@@ -299,6 +299,82 @@ body {
 }
 
 /* Responsive constraints */
+/* ========================================= */
+/* DASHBOARD & ROLE SELECTION                  */
+/* ========================================= */
+
+.dashboard-wrapper {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.dashboard-content {
+  z-index: 10;
+  text-align: center;
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.dashboard-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 48px;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.role-cards-container {
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+}
+
+.role-card {
+  width: 320px;
+  padding: 40px 32px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.role-card:hover {
+  border-color: #58A6FF;
+  transform: scale(1.03);
+  box-shadow: 0 0 30px rgba(88, 166, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.role-icon {
+  font-size: 36px;
+  color: #58A6FF;
+  margin-bottom: 24px;
+}
+
+.role-card h3 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #ffffff;
+}
+
+.role-card p {
+  font-size: 15px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
 @media (max-width: 900px) {
   .split-layout {
     flex-direction: column;
@@ -312,5 +388,14 @@ body {
   .navbar {
     position: relative;
     padding: 24px;
+  }
+  
+  .role-cards-container {
+    flex-direction: column;
+    padding: 0 24px;
+  }
+  
+  .role-card {
+    width: 100%;
   }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaGithub, FaGitlab, FaGoogle } from 'react-icons/fa';
+import { FaGithub, FaGitlab, FaGoogle, FaCode, FaBriefcase } from 'react-icons/fa';
 import './index.css';
 
 const REVIEWS_DATA = [
@@ -42,13 +42,13 @@ const REVIEWS_DATA = [
   }
 ];
 
-function App() {
+function LoginView({ onLogin }) {
   const [currentReview, setCurrentReview] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentReview((prev) => (prev + 1) % REVIEWS_DATA.length);
-    }, 3000); // 3 seconds per review
+    }, 3000);
     return () => clearInterval(timer);
   }, []);
 
@@ -77,15 +77,15 @@ function App() {
             </div>
 
             <div className="button-group">
-              <button className="auth-btn">
+              <button className="auth-btn" onClick={onLogin}>
                 <span className="btn-icon"><FaGoogle color="#4285F4" /></span>
                 Continue with Google
               </button>
-              <button className="auth-btn">
+              <button className="auth-btn" onClick={onLogin}>
                 <span className="btn-icon"><FaGithub /></span>
                 Continue with GitHub
               </button>
-              <button className="auth-btn">
+              <button className="auth-btn" onClick={onLogin}>
                 <span className="btn-icon"><FaGitlab color="#FC6D26" /></span>
                 Continue with GitLab
               </button>
@@ -120,6 +120,55 @@ function App() {
         </div>
       </section>
     </main>
+  );
+}
+
+function DashboardView() {
+  return (
+    <main className="dashboard-wrapper">
+      <div className="bg-glow"></div>
+      <nav className="navbar">
+        <img src="/logo.png" alt="Bugsentry Logo" className="logo" />
+      </nav>
+
+      <div className="dashboard-content">
+        <h1 className="dashboard-title">Choose your workspace experience</h1>
+        
+        <div className="role-cards-container">
+          {/* Developer Mode Card */}
+          <div className="role-card">
+            <div className="role-icon">
+              <FaCode />
+            </div>
+            <h3>Use as Developer</h3>
+            <p>View technical insights, code-level risks, and detailed analysis</p>
+          </div>
+
+          {/* CEO Mode Card */}
+          <div className="role-card">
+            <div className="role-icon">
+              <FaBriefcase />
+            </div>
+            <h3>Use as CEO</h3>
+            <p>View business impact, risk summary, and decision insights</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  return (
+    <>
+      {!isLoggedIn ? (
+        <LoginView onLogin={() => setIsLoggedIn(true)} />
+      ) : (
+        <DashboardView />
+      )}
+    </>
   );
 }
 
