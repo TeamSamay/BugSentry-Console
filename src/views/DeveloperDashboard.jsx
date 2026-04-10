@@ -265,7 +265,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
   const handleRepoSelect = async (repo) => {
     setSelectedRepo(repo);
-    setChatHistory([{ role: 'bot', text: getCopilotWelcome(repo) }]);
+    setChatHistory([]); // Clear chat for new repo, start empty
 
     let currentStatus = null;
     if (!analysisStatus[repo.repo_id]) {
