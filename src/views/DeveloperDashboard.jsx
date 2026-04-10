@@ -516,15 +516,6 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
         <main className="dev-center-feed">
           {!selectedRepo && (
             <>
-              <div className="home-welcome-banner animate-fade-in">
-                <div className="banner-content">
-                  <h2>Home</h2>
-                  <p>Unified risk visibility across {repos.length} synchronized repositories.</p>
-                </div>
-                <button className="btn-scan" onClick={refetch}>
-                  <FiRefreshCw className={syncing ? 'spin' : ''} /> Sync All
-                </button>
-              </div>
 
               <div className="copilot-section integrated" id="copilot-section" style={{ marginTop: '0', marginBottom: '48px' }}>
                 <div className="copilot-header" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
