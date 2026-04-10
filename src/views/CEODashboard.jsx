@@ -1116,13 +1116,34 @@ function CeoWorkspacePanel({ panelId }) {
     case 'ceo-exec-summary':
       return (
         <div className="ceo-panel-page">
-          <div className="ceo-panel-hero dev-activity-card">
-            <p className="ceo-panel-prose">{CEO_SUMMARY_NARRATIVE}</p>
-            <ul className="ceo-panel-bullets">
-              {CEO_SUMMARY_HIGHLIGHTS.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
+          <div className="ceo-exec-brief-card animate-fade-in">
+            <div className="ceo-exec-brief-header">
+              <div className="brief-icon-box">
+                <FaBriefcase />
+              </div>
+              <div className="ceo-exec-brief-title-group">
+                <h2>BugSentry-Console / Executive Portfolio</h2>
+                <p>Synced with latest organization clusters • 2 days ago</p>
+              </div>
+            </div>
+
+            <span className="ceo-exec-brief-release-tag">Strategic Intelligence v2024-04-11</span>
+
+            <div className="ceo-exec-brief-content">
+              <h3>Executive Insight & Findings</h3>
+              <ul className="ceo-exec-brief-list">
+                <li>
+                  <div className="item-icon"><FiZap /></div>
+                  <p>{CEO_SUMMARY_NARRATIVE}</p>
+                </li>
+                {CEO_SUMMARY_HIGHLIGHTS.map((line, idx) => (
+                  <li key={`highlight-${idx}`}>
+                    <div className="item-icon"><FiStar /></div>
+                    <p>{line}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           <div className="ceo-exec-block-head ceo-panel-section-head">

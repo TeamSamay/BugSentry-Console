@@ -5661,3 +5661,100 @@ a.auth-btn {
   50% { transform: scale(1.2); opacity: 1; }
   100% { transform: scale(0.8); opacity: 0.5; }
 }
+
+/* CEO Dashboard - Premium Styles */
+.ceo-dashboard {
+  --ceo-accent: #58a6ff;
+  --ceo-bg: #0d1117;
+  --ceo-card-bg: rgba(22, 27, 34, 0.6);
+  --ceo-border: rgba(255, 255, 255, 0.1);
+}
+
+.ceo-exec-brief-card {
+  background: var(--ceo-card-bg);
+  border: 1px solid var(--ceo-border);
+  border-radius: 12px;
+  padding: 24px;
+  backdrop-filter: blur(12px);
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ceo-exec-brief-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.ceo-exec-brief-header .brief-icon-box {
+  width: 48px;
+  height: 48px;
+  background: #1f6feb;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(31, 111, 235, 0.3);
+}
+
+.ceo-exec-brief-title-group h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #c9d1d9;
+}
+
+.ceo-exec-brief-title-group p {
+  margin: 0;
+  font-size: 13px;
+  color: #8b949e;
+}
+
+.ceo-exec-brief-release-tag {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  margin: 16px 0 24px;
+  display: block;
+}
+
+.ceo-exec-brief-content {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 24px;
+}
+
+.ceo-exec-brief-content h3 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
+}
+
+.ceo-exec-brief-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ceo-exec-brief-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: #c9d1d9;
+  line-height: 1.5;
+}
+
+.ceo-exec-brief-list li .item-icon {
+  margin-top: 4px;
+  color: #d29922;
+  font-size: 16px;
+}
