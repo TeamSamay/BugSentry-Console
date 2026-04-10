@@ -27,7 +27,7 @@ export function ChatMessage({ msg, onViewSolution, noTitle }) {
     if (type === 'PR') {
       const lines = content.split('\n').filter(l => l.trim());
       const title = lines[0]?.replace(/^Title: /, '') || 'Proposed Remediation Plan';
-      const points = lines.slice(1, 4); 
+      const points = lines.slice(1, 4);
       return (
         <div className="ai-ui-card pr-card">
           <div className="card-tag">BugSentry Analysis • Solution</div>
@@ -43,7 +43,7 @@ export function ChatMessage({ msg, onViewSolution, noTitle }) {
       const lines = content.split('\n').filter(l => l.trim());
       const title = lines[0]?.replace(/^Title: /, '') || 'Security Finding Details';
       const severity = lines[1]?.replace(/^Severity: /, '') || 'Critical';
-      const desc = lines.slice(2, 4).join(' '); 
+      const desc = lines.slice(2, 4).join(' ');
       return (
         <div className="ai-ui-card issue-card">
           <div className="card-tag">{severity.toUpperCase()} PRIORITY ALERT</div>
