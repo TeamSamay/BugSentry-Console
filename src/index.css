@@ -4181,3 +4181,77 @@ a.auth-btn {
   color: rgba(255, 255, 255, 0.9);
 }
 
+
+/* Chat Alignment Fixes */
+.chat-msg {
+  display: flex !important;
+  width: 100% !important;
+  margin-bottom: 20px !important;
+}
+
+.chat-msg-user {
+  justify-content: flex-end !important;
+}
+
+.chat-msg-bot {
+  justify-content: flex-start !important;
+}
+
+/* Specific bubble adjustments for alignment */
+.chat-bubble {
+  max-width: 80% !important;
+  padding: 12px 18px !important;
+  border-radius: 12px !important;
+  position: relative !important;
+}
+
+.chat-msg-user .chat-bubble {
+  background: rgba(88, 166, 255, 0.1) !important;
+  border: 1px solid rgba(88, 166, 255, 0.2) !important;
+  color: #fff !important;
+  border-bottom-right-radius: 2px !important;
+  text-align: right !important; /* Optional: adds to the right-side feel */
+}
+
+.chat-msg-bot .chat-bubble {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom-left-radius: 2px !important;
+  text-align: left !important;
+}
+
+/* Ensure markdown content inside respects alignment */
+.chat-msg-user .markdown-chat * {
+  text-align: right !important;
+}
+
+.chat-msg-bot .markdown-chat * {
+  text-align: left !important;
+}
+
+/* If user message is just text, don\''t show header */
+.chat-msg-user .chat-h2 {
+  display: none !important;
+}
+
+
+/* Refined Chat Alignment */
+.chat-msg-user {
+  justify-content: flex-end !important;
+}
+
+.chat-msg-user .chat-bubble {
+  border-top-left-radius: 12px !important;
+  border-top-right-radius: 12px !important;
+  border-bottom-left-radius: 12px !important;
+  border-bottom-right-radius: 2px !important;
+  text-align: left !important; /* Keep text left-aligned inside the bubble for readability */
+}
+
+.chat-msg-bot .chat-bubble {
+  border-top-left-radius: 12px !important;
+  border-top-right-radius: 12px !important;
+  border-bottom-left-radius: 2px !important;
+  border-bottom-right-radius: 12px !important;
+}
+
