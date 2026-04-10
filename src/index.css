@@ -974,10 +974,6 @@ body {
 }
 
 .gh-menu {
-  position: absolute;
-  right: 0;
-  top: 40px;
-  z-index: 200;
   min-width: 260px;
   padding: 8px 0;
   border-radius: 12px;
@@ -991,6 +987,7 @@ body {
   filter: none;
   mix-blend-mode: normal;
   isolation: isolate;
+  pointer-events: auto;
 }
 
 .gh-menu-item {

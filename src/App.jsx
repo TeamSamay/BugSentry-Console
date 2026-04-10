@@ -505,9 +505,18 @@ function DeveloperDashboard({ onLogout, onBack, onOpenRepoDetails, scannedRepos,
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [createMenuAnchorEl, setCreateMenuAnchorEl] = useState(null);
+  const [createMenuPos, setCreateMenuPos] = useState({ top: 0, right: 0 });
 
   useEffect(() => {
     if (!showCreateMenu) return;
+
+    if (createMenuAnchorEl) {
+      const rect = createMenuAnchorEl.getBoundingClientRect();
+      setCreateMenuPos({
+        top: Math.round(rect.bottom + 8),
+        right: Math.max(8, Math.round(window.innerWidth - rect.right)),
+      });
+    }
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') setShowCreateMenu(false);
@@ -562,7 +571,12 @@ function DeveloperDashboard({ onLogout, onBack, onOpenRepoDetails, scannedRepos,
           </div>
 
           {showCreateMenu && (
-            <div className="gh-menu" role="menu" aria-label="Create menu">
+            <div
+              className="gh-menu"
+              role="menu"
+              aria-label="Create menu"
+              style={{ position: 'fixed', top: createMenuPos.top, right: createMenuPos.right, zIndex: 9999 }}
+            >
               <button className="gh-menu-item" role="menuitem" onClick={() => setShowCreateMenu(false)}>
                 <span className="gh-menu-icon"><FiAlertCircle size={16} /></span>
                 <span>New issue</span>
