@@ -5,7 +5,7 @@ import {
   FiMenu, FiSearch, FiBell, FiPlus, FiInbox, 
   FiMessageSquare, FiGitBranch, FiFileText, FiGitCommit, FiFilter, FiMoreHorizontal, FiTerminal,
   FiCpu, FiAlertCircle, FiStar, FiChevronDown, FiBookOpen, FiPlay,
-  FiUpload, FiUsers, FiCode
+  FiUpload, FiUsers, FiCode, FiUser, FiSettings, FiLogOut
 } from 'react-icons/fi';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import './index.css';
@@ -506,6 +506,8 @@ function DeveloperDashboard({ onLogout, onBack, onOpenRepoDetails, scannedRepos,
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [createMenuAnchorEl, setCreateMenuAnchorEl] = useState(null);
   const [createMenuPos, setCreateMenuPos] = useState({ top: 0, right: 0 });
+  const [profileMenuAnchorEl, setProfileMenuAnchorEl] = useState(null);
+  const [profileMenuPos, setProfileMenuPos] = useState({ top: 0, right: 0 });
 
   useEffect(() => {
     if (!showCreateMenu) return;
@@ -521,20 +523,32 @@ function DeveloperDashboard({ onLogout, onBack, onOpenRepoDetails, scannedRepos,
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') setShowCreateMenu(false);
     };
-    const handlePointerDown = (e) => {
-      if (!createMenuAnchorEl) return;
-      const root = createMenuAnchorEl.parentElement;
-      if (root && root.contains(e.target)) return;
-      setShowCreateMenu(false);
-    };
 
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('pointerdown', handlePointerDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('pointerdown', handlePointerDown);
     };
   }, [showCreateMenu, createMenuAnchorEl]);
+
+  useEffect(() => {
+    if (!showProfileMenu) return;
+
+    if (profileMenuAnchorEl) {
+      const rect = profileMenuAnchorEl.getBoundingClientRect();
+      setProfileMenuPos({
+        top: Math.round(rect.bottom + 8),
+        right: Math.max(8, Math.round(window.innerWidth - rect.right)),
+      });
+    }
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setShowProfileMenu(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showProfileMenu, profileMenuAnchorEl]);
 
   return (
     <div className="dev-dashboard-layout">
@@ -571,13 +585,20 @@ function DeveloperDashboard({ onLogout, onBack, onOpenRepoDetails, scannedRepos,
           </div>
 
           {showCreateMenu && (
-            <div
-              className="gh-menu"
-              role="menu"
-              aria-label="Create menu"
-              style={{ position: 'fixed', top: createMenuPos.top, right: createMenuPos.right, zIndex: 9999 }}
-            >
-              <button className="gh-menu-item" role="menuitem" onClick={() => setShowCreateMenu(false)}>
+            <>
+              <button
+                type="button"
+                className="gh-menu-backdrop"
+                aria-label="Close menu"
+                onClick={() => setShowCreateMenu(false)}
+              />
+              <div
+                className="gh-menu"
+                role="menu"
+                aria-label="Create menu"
+                style={{ position: 'fixed', top: createMenuPos.top, right: createMenuPos.right, zIndex: 9999 }}
+              >
+                <button className="gh-menu-item" role="menuitem" onClick={() => setShowCreateMenu(false)}>
                 <span className="gh-menu-icon"><FiAlertCircle size={16} /></span>
                 <span>New issue</span>
               </button>
@@ -611,7 +632,82 @@ function DeveloperDashboard({ onLogout, onBack, onOpenRepoDetails, scannedRepos,
                 <span className="gh-menu-icon"><FiFileText size={16} /></span>
                 <span>New project</span>
               </button>
-            </div>
+              </div>
+            </>
+          )}
+
+          <button
+            className="gh-avatar-btn"
+            ref={setProfileMenuAnchorEl}
+            title="Profile"
+            onClick={() => setShowProfileMenu(v => !v)}
+          >
+            <span className="gh-avatar" aria-hidden="true">
+              <FiUser size={14} />
+            </span>
+          </button>
+
+          {showProfileMenu && (
+            <>
+              <button
+                type="button"
+                className="gh-menu-backdrop"
+                aria-label="Close profile menu"
+                onClick={() => setShowProfileMenu(false)}
+              />
+              <div
+                className="gh-menu"
+                role="menu"
+                aria-label="Profile menu"
+                style={{ position: 'fixed', top: profileMenuPos.top, right: profileMenuPos.right, zIndex: 9999, minWidth: 280 }}
+              >
+                <div style={{ padding: '8px 16px 10px 16px', color: '#e6edf3' }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px' }}>Onkarnagargoje</div>
+                  <div style={{ color: '#8b949e', fontSize: '12px', marginTop: '2px' }}>@Onkar Nagargoje</div>
+                </div>
+
+                <div className="gh-menu-sep" role="separator" />
+
+                <button className="gh-menu-item" role="menuitem" onClick={() => setShowProfileMenu(false)}>
+                  <span className="gh-menu-icon"><FaRegSmile size={16} /></span>
+                  <span>Set status</span>
+                </button>
+
+                <div className="gh-menu-sep" role="separator" />
+
+                <button className="gh-menu-item" role="menuitem" onClick={() => setShowProfileMenu(false)}>
+                  <span className="gh-menu-icon"><FiUser size={16} /></span>
+                  <span>Profile</span>
+                </button>
+                <button className="gh-menu-item" role="menuitem" onClick={() => setShowProfileMenu(false)}>
+                  <span className="gh-menu-icon"><FiBookOpen size={16} /></span>
+                  <span>Repositories</span>
+                </button>
+                <button className="gh-menu-item" role="menuitem" onClick={() => setShowProfileMenu(false)}>
+                  <span className="gh-menu-icon"><FiStar size={16} /></span>
+                  <span>Stars</span>
+                </button>
+                <button className="gh-menu-item" role="menuitem" onClick={() => setShowProfileMenu(false)}>
+                  <span className="gh-menu-icon"><FiCode size={16} /></span>
+                  <span>Gists</span>
+                </button>
+                <button className="gh-menu-item" role="menuitem" onClick={() => setShowProfileMenu(false)}>
+                  <span className="gh-menu-icon"><FiUsers size={16} /></span>
+                  <span>Organizations</span>
+                </button>
+
+                <div className="gh-menu-sep" role="separator" />
+
+                <button className="gh-menu-item" role="menuitem" onClick={() => setShowProfileMenu(false)}>
+                  <span className="gh-menu-icon"><FiSettings size={16} /></span>
+                  <span>Settings</span>
+                </button>
+                <button className="gh-menu-item" role="menuitem" onClick={() => { setShowProfileMenu(false); onLogout(); }}>
+                  <span className="gh-menu-icon"><FiLogOut size={16} /></span>
+                  <span>Sign out</span>
+                </button>
+              </div>
+            </>
           )}
         </div>
       </header>
