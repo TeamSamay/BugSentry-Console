@@ -4542,3 +4542,241 @@ a.auth-btn {
   transform: scale(1.1);
 }
 
+
+/* Fix for "Black Page" and Visibility */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.9) !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.solution-modal-page {
+  background: #0d1117 !important;
+  color: #c9d1d9 !important;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8) !important;
+  border: 1px solid rgba(88, 166, 255, 0.2) !important;
+  position: relative !important;
+  min-height: 400px !important; /* Ensure it never looks empty */
+}
+
+.modal-content-grid {
+  display: grid !important;
+  grid-template-columns: 320px 1fr !important;
+  height: calc(85vh - 70px) !important; /* Account for top bar */
+}
+
+.modal-main-remedy {
+  padding: 40px !important;
+  background: #0d1117 !important;
+  color: #fff !important;
+}
+
+/* Ensure ChatMessage inside modal is bright */
+.solution-editor-view {
+  color: #fff !important;
+}
+
+.solution-editor-view .chat-bubble {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  max-width: 100% !important;
+}
+
+.solution-editor-view .chat-bubble * {
+  color: #c9d1d9 !important;
+}
+
+.solution-editor-view h1, .solution-editor-view h2, .solution-editor-view h3 {
+  color: #58a6ff !important;
+  margin-top: 24px !important;
+}
+
+.solution-editor-view pre {
+  background: #161b22 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding: 16px !important;
+}
+
+
+/* Remediation Modal Inner Styles */
+.sidebar-info-block {
+  margin-bottom: 24px;
+}
+
+.sidebar-info-block label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-info-block span {
+  font-size: 14px;
+  color: #fff;
+  font-weight: 500;
+}
+
+.severity-badge-modal {
+  background: rgba(248, 81, 73, 0.15);
+  color: #ff7b72;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(248, 81, 73, 0.2);
+}
+
+.remediation-spinner-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  gap: 16px;
+}
+
+.scan-spinner.large {
+  width: 60px;
+  height: 60px;
+  border-width: 4px;
+}
+
+.remediation-spinner-view h3 {
+  color: #58a6ff;
+  font-size: 20px;
+  margin: 0;
+}
+
+.remediation-spinner-view p {
+  color: rgba(255, 255, 255, 0.5);
+  max-width: 400px;
+}
+
+
+/* Final Premium Analysis Designs */
+.collapsible-card {
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background: rgba(13, 17, 23, 0.4) !important;
+  backdrop-filter: blur(20px) !important;
+  margin-bottom: 20px !important;
+  overflow: hidden !important;
+  border-radius: 16px !important;
+}
+
+.collapsible-premium {
+  padding: 16px 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  background: transparent !important;
+  border-bottom: 1px solid transparent;
+}
+
+.collapsible-premium:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.header-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.collapsible-premium h3 {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: #fff !important; /* Fixed: White text as requested */
+  letter-spacing: 0.3px !important;
+}
+
+.header-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.brief-icon { background: rgba(88, 166, 255, 0.1); color: #58a6ff; }
+.risk-icon { background: rgba(248, 81, 73, 0.1); color: #f85149; }
+.bug-icon { background: rgba(210, 153, 34, 0.1); color: #d29922; }
+.hotspots-icon { background: rgba(137, 87, 229, 0.1); color: #8957e5; }
+.solution-icon { background: rgba(48, 209, 88, 0.1); color: #30d158; }
+.directory-icon { background: rgba(110, 118, 129, 0.1); color: #8b949e; }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.count-badge {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chevron-icon {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 20px;
+  transition: transform 0.3s ease;
+}
+
+.brief-card-premium {
+  background: linear-gradient(135deg, rgba(88, 166, 255, 0.05) 0%, rgba(13, 17, 23, 1) 100%) !important;
+  border: 1px solid rgba(88, 166, 255, 0.2) !important;
+  border-radius: 16px !important;
+}
+
+.brief-header-static {
+  padding: 20px 24px !important;
+  border-bottom: 1px solid rgba(88, 166, 255, 0.1) !important;
+}
+
+.brief-header-static h3 {
+  margin: 0 !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+}
+
+
+/* Smart Brief Bullets */
+.brief-vertical-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.brief-vertical-item:last-child {
+  border-bottom: none;
+}
+
+.brief-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #58a6ff;
+  margin-top: 8px;
+  box-shadow: 0 0 10px rgba(88, 166, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.brief-vertical-item p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #c9d1d9 !important;
+}
+

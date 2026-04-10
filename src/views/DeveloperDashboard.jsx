@@ -206,6 +206,47 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
   const [showAllRepos, setShowAllRepos] = useState(false);
   const [isChatMaximized, setIsChatMaximized] = useState(false);
   const [activeSolution, setActiveSolution] = useState(null);
+  const [remediationLoading, setRemediationLoading] = useState(false);
+
+  const fetchRemediation = async (item, type = 'file') => {
+    if (!selectedRepo) return;
+    setRemediationLoading(true);
+    // Show immediate optimistic UI state
+    setActiveSolution({ 
+      title: `Remediating ${item.path || item.area || 'Selected Block'}...`, 
+      content: '_BugSentry AI Agents are spinning up a dedicated container to generate a secure remediation patch..._' 
+    });
+    
+    try {
+      const resp = await fetch(`${SYSTEM_URL}/api/report/remediate/${selectedRepo.repo_id}`, {
+        method: 'POST',
+        headers: { ...authHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file_path: item.path,
+          problem_type: item.bug_type || item.risk_reason || type,
+          context_data: item
+        })
+      });
+      const data = await resp.json();
+      if (data.error) throw new Error(data.error);
+      
+      setActiveSolution({
+        title: data.title || `Remediation: ${item.path || item.area}`,
+        content: data.patch,
+        severity: data.severity || 'Critical',
+        confidence: data.confidence || '98%',
+        isReal: true
+      });
+    } catch (err) {
+      setActiveSolution({ 
+        title: 'Network Error: Remediation Engine', 
+        content: `### ❌ Generation Failed\n\n**Reason:** ${err.message}. \n\n**Action Required:** Please ensure the **BugSentry-System** backend service is reachable at \`${SYSTEM_URL}\`. If running locally, check your CORS and API key settings.` 
+      });
+    } finally {
+      setRemediationLoading(false);
+    }
+  };
+
   const [expandedSections, setExpandedSections] = useState({
     brief: true,
     riskyFiles: false,
@@ -691,34 +732,36 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                   </div>
 
                   <div className="analysis-grid vertical-brief">
-                    <div className="summary-card full-width">
-                      <div className="card-header collapsible" onClick={() => toggleSection('brief')}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FaBriefcase className="header-icon" /><h3>Repository Brief</h3>
+                    <div className="summary-card full-width brief-card-premium">
+                      <div className="card-header brief-header-static">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div className="header-icon-wrapper brief-icon"><FaBriefcase /></div>
+                          <h3 style={{ color: '#fff' }}>Repository Executive Brief</h3>
                         </div>
-                        {expandedSections.brief ? <FiChevronUp /> : <FiChevronDown />}
                       </div>
-                      {expandedSections.brief && (
-                        <div className="card-body animate-slide-down">
-                          <div className="brief-vertical-list">
-                            {repoBriefPoints.map((point, index) => (
-                              <div key={`brief-${index}`} className="brief-vertical-item">
-                                <span className="brief-bullet" />
-                                <p>{point}</p>
-                              </div>
-                            ))}
-                          </div>
+                      <div className="card-body">
+                        <div className="brief-vertical-list">
+                          {repoBriefPoints.map((point, index) => (
+                            <div key={`brief-${index}`} className="brief-vertical-item">
+                              <span className="brief-bullet" />
+                              <p style={{ color: '#c9d1d9' }}>{point}</p>
+                            </div>
+                          ))}
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="summary-card">
-                    <div className="card-header collapsible" onClick={() => toggleSection('riskyFiles')}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FiShield className="header-icon" /><h3>Detected Risky Files (Automated Audit)</h3>
+                  <div className="summary-card collapsible-card">
+                    <div className="card-header collapsible-premium" onClick={() => toggleSection('riskyFiles')}>
+                      <div className="header-left">
+                        <div className="header-icon-wrapper risk-icon"><FiShield /></div>
+                        <h3>Detected Risky Files (Automated Audit)</h3>
                       </div>
-                      {expandedSections.riskyFiles ? <FiChevronUp /> : <FiChevronDown />}
+                      <div className="header-right">
+                        <span className="count-badge">{topRiskyFiles.length}</span>
+                        {expandedSections.riskyFiles ? <FiChevronUp className="chevron-icon" /> : <FiChevronDown className="chevron-icon" />}
+                      </div>
                     </div>
                     {expandedSections.riskyFiles && (
                       <div className="card-body animate-slide-down">
@@ -737,10 +780,13 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                               <p className="risk-signal-tags">{(file.signals || []).slice(0, 3).map(s => <span key={s} className="signal-tag">{s}</span>)}</p>
                               <div className="risk-footer">
                                 <div className="risk-meta">Language: <strong>{file.language || 'JS'}</strong></div>
-                                <button className="btn-details-mini" onClick={(e) => { e.stopPropagation(); setActiveSolution({
-                                  title: `Risk Analysis: ${file.path}`,
-                                  content: `### Risk Breakdown\n\n**File Path:** ${file.path}\n**Risk Level:** ${file.risk_level}\n**Score:** ${file.risk_score}%\n\n#### Detected Signals:\n${(file.signals || []).map(s => `- ${s}`).join('\n')}\n\n#### Primary Risk Analysis:\n${file.primary_risk || 'The automated scanner identified patterns consistent with potential security vulnerabilities.'}\n\n#### Recommended Remediation:\n\`\`\`javascript\n// AI-Generated Remediation Strategy for ${file.path}\nfunction validateAndSanitize(data) {\n  if (typeof data !== "string") return "";\n  return data.replace(/[^a-zA-Z0-9]/g, "");\n}\n\`\`\``
-                                }); }}>Analyze Risk</button>
+                                <button 
+                                  className="btn-details-mini" 
+                                  disabled={remediationLoading}
+                                  onClick={(e) => { e.stopPropagation(); fetchRemediation(file, 'risky_file'); }}
+                                >
+                                  {remediationLoading ? 'Processing...' : 'Analyze Risk'}
+                                </button>
                               </div>
                             </div>
                           ))}
@@ -749,12 +795,16 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                     )}
                   </div>
 
-                  <div className="summary-card" id="risk-findings">
-                    <div className="card-header collapsible" onClick={() => toggleSection('bugs')}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaBug className="header-icon" /><h3>Bug Prediction Timeline (ETA + Impact)</h3>
+                  <div className="summary-card collapsible-card" id="risk-findings">
+                    <div className="card-header collapsible-premium" onClick={() => toggleSection('bugs')}>
+                      <div className="header-left">
+                        <div className="header-icon-wrapper bug-icon"><FaBug /></div>
+                        <h3>Bug Prediction Timeline (ETA + Impact)</h3>
                       </div>
-                      {expandedSections.bugs ? <FiChevronUp /> : <FiChevronDown />}
+                      <div className="header-right">
+                        <span className="count-badge">{probableFailures.length}</span>
+                        {expandedSections.bugs ? <FiChevronUp className="chevron-icon" /> : <FiChevronDown className="chevron-icon" />}
+                      </div>
                     </div>
                     {expandedSections.bugs && (
                       <div className="card-body animate-slide-down">
@@ -780,10 +830,13 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                                 <div className="timeline-meta">
                                   <span>Impact: <strong>{row.impact || 'Medium'}</strong></span>
                                 </div>
-                                <button className="btn-details-mini" onClick={(e) => { e.stopPropagation(); setActiveSolution({
-                                  title: `Failure Prediction: ${row.area}`,
-                                  content: `### Predictive Failure Report\n\n**Area:** ${row.area}\n**Predicted Issue:** ${row.bug_type}\n**Estimated Window:** ${row.eta_days} days\n\n#### Architecture Impact:\nThe projected impact is **${row.impact}**. This module interacts with high-traffic controllers.\n\n#### Recommended Action Plan:\n1. Re-evaluate the state management in this area.\n2. Add defensive checks for null/undefined objects.\n3. Implement a retry mechanism for downstream calls.`
-                                }); }}>View Architecture</button>
+                                <button 
+                                  className="btn-details-mini" 
+                                  disabled={remediationLoading}
+                                  onClick={(e) => { e.stopPropagation(); fetchRemediation(row, 'bug_prediction'); }}
+                                >
+                                  {remediationLoading ? 'Processing...' : 'View Architecture'}
+                                </button>
                               </div>
                             </div>
                           ))}
@@ -793,12 +846,16 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                   </div>
 
                   {directoryHotspots.length > 0 && (
-                    <div className="summary-card">
-                      <div className="card-header collapsible" onClick={() => toggleSection('hotspots')}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FiAlertCircle className="header-icon" /><h3>High-Risk Directories</h3>
+                    <div className="summary-card collapsible-card">
+                      <div className="card-header collapsible-premium" onClick={() => toggleSection('hotspots')}>
+                        <div className="header-left">
+                          <div className="header-icon-wrapper hotspots-icon"><FiAlertCircle /></div>
+                          <h3>High-Risk Hotspots (Directory-Level)</h3>
                         </div>
-                        {expandedSections.hotspots ? <FiChevronUp /> : <FiChevronDown />}
+                        <div className="header-right">
+                          <span className="count-badge">{directoryHotspots.length}</span>
+                          {expandedSections.hotspots ? <FiChevronUp className="chevron-icon" /> : <FiChevronDown className="chevron-icon" />}
+                        </div>
                       </div>
                       {expandedSections.hotspots && (
                         <div className="card-body animate-slide-down">
@@ -810,10 +867,13 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                                   <p>{spot.risk_reason}</p>
                                   <span>{spot.severity || 'Medium'} Risk</span>
                                 </div>
-                                <button className="btn-details-mini" onClick={(e) => { e.stopPropagation(); setActiveSolution({
-                                  title: `Directory Health: ${spot.path}`,
-                                  content: `### Directory Analysis\n\n**Path:** ${spot.path}\n**Severity:** ${spot.severity}\n\n#### Health Status:\nThis directory handles sensitive data but lacks robust validation patterns.\n\n#### Recommended Strategy:\nApply a strict input-output mapping policy for all files in this directory to ensure data integrity.`
-                                }); }}>Full Guide</button>
+                                <button 
+                                  className="btn-details-mini" 
+                                  disabled={remediationLoading}
+                                  onClick={(e) => { e.stopPropagation(); fetchRemediation(spot, 'directory_hotspot'); }}
+                                >
+                                  {remediationLoading ? 'Analyzing...' : 'Full Guide'}
+                                </button>
                               </div>
                             ))}
                           </div>
@@ -822,12 +882,16 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                     </div>
                   )}
 
-                  <div className="summary-card">
-                    <div className="card-header collapsible" onClick={() => toggleSection('solution')}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaLightbulb className="header-icon" /><h3>Solution Guide (Action Plan)</h3>
+                  <div className="summary-card collapsible-card">
+                    <div className="card-header collapsible-premium" onClick={() => toggleSection('solution')}>
+                      <div className="header-left">
+                        <div className="header-icon-wrapper solution-icon"><FaLightbulb /></div>
+                        <h3>Solution Guide (AI Action Plan)</h3>
                       </div>
-                      {expandedSections.solution ? <FiChevronUp /> : <FiChevronDown />}
+                      <div className="header-right">
+                        <span className="count-badge">{fixPlan.length}</span>
+                        {expandedSections.solution ? <FiChevronUp className="chevron-icon" /> : <FiChevronDown className="chevron-icon" />}
+                      </div>
                     </div>
                     {expandedSections.solution && (
                       <div className="card-body animate-slide-down">
@@ -843,10 +907,13 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                                   <span>Owner: {fix.owner || 'Developer'}</span>
                                 </div>
                               </div>
-                              <button className="btn-details-mini highlight" onClick={(e) => { e.stopPropagation(); setActiveSolution({
-                                title: fix.title,
-                                content: `### Detailed Fix Plan\n\n**Objective:** ${fix.title}\n**Priority:** ${fix.priority}\n\n#### Proposed Implementation:\n\`\`\`javascript\n// Security fix for ${fix.title}\n// Implementation of: ${fix.action}\nexport const securedModule = (data) => {\n  return applySecurityWrappers(data);\n};\n\`\`\``
-                              }); }}>Generate Code</button>
+                              <button 
+                                className="btn-details-mini highlight" 
+                                disabled={remediationLoading}
+                                onClick={(e) => { e.stopPropagation(); fetchRemediation({ area: fix.title, bug_type: fix.action }, 'action_plan'); }}
+                              >
+                                {remediationLoading ? 'Preparing Code...' : 'Generate Code'}
+                              </button>
                             </div>
                           ))}
                         </div>
@@ -854,12 +921,15 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                     )}
                   </div>
 
-                  <div className="summary-card directory-overview-card">
-                    <div className="card-header collapsible" onClick={() => toggleSection('directory')}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FaCode className="header-icon" /><h3>Project Architecture & File System</h3>
+                  <div className="summary-card directory-overview-card collapsible-card">
+                    <div className="card-header collapsible-premium" onClick={() => toggleSection('directory')}>
+                      <div className="header-left">
+                        <div className="header-icon-wrapper directory-icon"><FaCode /></div>
+                        <h3>Project Architecture & File System</h3>
                       </div>
-                      {expandedSections.directory ? <FiChevronUp /> : <FiChevronDown />}
+                      <div className="header-right">
+                        {expandedSections.directory ? <FiChevronUp className="chevron-icon" /> : <FiChevronDown className="chevron-icon" />}
+                      </div>
                     </div>
                     {expandedSections.directory && (
                       <div className="card-body animate-slide-down">
@@ -960,32 +1030,36 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
             <div className="modal-content-grid">
               <div className="modal-sidebar-info">
-                <div className="info-block">
-                  <label>Finding</label>
-                  <span>{activeSolution.title}</span>
-                </div>
-                <div className="info-block">
-                  <label>Status</label>
-                  <span className="status-open">Needs Patch</span>
-                </div>
-                <div className="info-block">
+                <div className="sidebar-info-block">
                   <label>Remediation Type</label>
-                  <span>Code Fix • PR Ready</span>
+                  <span>{remediationLoading ? 'Analyzing...' : 'AI Patch Generation'}</span>
+                </div>
+                <div className="sidebar-info-block">
+                  <label>Confidence Level</label>
+                  <span>{activeSolution.confidence || 'Calculating...'}</span>
+                </div>
+                <div className="sidebar-info-block">
+                  <label>Severity</label>
+                  <span className="severity-badge-modal">{activeSolution.severity || 'High'}</span>
+                </div>
+                <div className="sidebar-info-block">
+                  <label>Generated On</label>
+                  <span>{new Date().toLocaleDateString()}</span>
                 </div>
               </div>
 
               <div className="modal-main-remedy">
-                <div className="remedy-section">
-                  <h3>Problem Context</h3>
-                  <p>BugSentry has identified a security vulnerability in the selected repository. The analysis suggests immediate developer action to mitigate potential exploitation.</p>
-                </div>
-
-                <div className="remedy-section">
-                  <h3>Proposed Remediation Patch</h3>
-                  <div className="markdown-chat solution-editor-view">
+                {remediationLoading ? (
+                  <div className="remediation-spinner-view">
+                    <div className="scan-spinner large" />
+                    <h3>Agents are working...</h3>
+                    <p>Scanning repository context and drafting security patches based on current architecture.</p>
+                  </div>
+                ) : (
+                  <div className="markdown-chat solution-editor-view animate-fade-in">
                     <ChatMessage msg={{ role: 'bot', text: activeSolution.content }} noTitle />
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
