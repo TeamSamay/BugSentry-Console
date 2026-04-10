@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export function RiskGraph() {
@@ -87,6 +87,119 @@ export function RepositoryRiskChart() {
             <Area type="monotone" dataKey="risk" stroke="#f85149" fillOpacity={1} fill="url(#colorRisk)" strokeWidth={2} />
           </AreaChart>
         </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+// ── GitHub Contribution Heatmap ──────────────────────────────────────────────
+function generateContribData() {
+  const weeks = 26; // ~6 months
+  const days = 7;
+  const grid = [];
+  const now = new Date();
+
+  for (let w = weeks - 1; w >= 0; w--) {
+    const week = [];
+    for (let d = 0; d < days; d++) {
+      const date = new Date(now);
+      date.setDate(now.getDate() - (w * 7 + (days - 1 - d)));
+      const count = Math.random() < 0.35 ? 0 : Math.floor(Math.random() * 12);
+      week.push({ date: date.toISOString().split('T')[0], count });
+    }
+    grid.push(week);
+  }
+  return grid;
+}
+
+function contribColor(count) {
+  if (count === 0) return 'rgba(255,255,255,0.05)';
+  if (count <= 2)  return 'rgba(88,166,255,0.25)';
+  if (count <= 5)  return 'rgba(88,166,255,0.5)';
+  if (count <= 9)  return 'rgba(88,166,255,0.8)';
+  return '#58A6FF';
+}
+
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAY_LABELS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+export function GitHubContributionChart({ username }) {
+  const grid = useMemo(() => generateContribData(), []);
+  const totalContribs = grid.flat().reduce((s, c) => s + c.count, 0);
+
+  // Build month label positions
+  const monthMarkers = useMemo(() => {
+    const markers = [];
+    let lastMonth = null;
+    grid.forEach((week, wi) => {
+      const month = new Date(week[0].date).getMonth();
+      if (month !== lastMonth) {
+        markers.push({ wi, label: MONTH_LABELS[month] });
+        lastMonth = month;
+      }
+    });
+    return markers;
+  }, [grid]);
+
+  const CELL = 13;
+  const GAP  = 3;
+  const STEP = CELL + GAP;
+
+  return (
+    <div className="dev-activity-card" style={{ marginBottom: '24px' }}>
+      <div className="dev-feed-header" style={{ marginBottom: '16px' }}>
+        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
+          GitHub Contribution Activity
+          {username && <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 400, marginLeft: 8, fontSize: 13 }}>@{username}</span>}
+        </h3>
+        <span style={{ background: 'rgba(88,166,255,0.1)', color: '#58A6FF', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', border: '1px solid rgba(88,166,255,0.2)' }}>
+          {totalContribs} contributions
+        </span>
+      </div>
+
+      <div style={{ overflowX: 'auto', paddingBottom: 8 }}>
+        <svg
+          width={grid.length * STEP + 32}
+          height={7 * STEP + 36}
+          style={{ display: 'block' }}
+        >
+          {/* Month labels */}
+          {monthMarkers.map(({ wi, label }) => (
+            <text key={wi} x={32 + wi * STEP} y={10} fill="rgba(255,255,255,0.4)" fontSize={10}>{label}</text>
+          ))}
+
+          {/* Day labels */}
+          {[1, 3, 5].map(d => (
+            <text key={d} x={0} y={18 + d * STEP + CELL * 0.75} fill="rgba(255,255,255,0.3)" fontSize={9}>{DAY_LABELS[d]}</text>
+          ))}
+
+          {/* Cells */}
+          {grid.map((week, wi) =>
+            week.map((cell, di) => (
+              <rect
+                key={`${wi}-${di}`}
+                x={32 + wi * STEP}
+                y={18 + di * STEP}
+                width={CELL}
+                height={CELL}
+                rx={2}
+                fill={contribColor(cell.count)}
+                style={{ cursor: 'default' }}
+              >
+                <title>{cell.date}: {cell.count} contributions</title>
+              </rect>
+            ))
+          )}
+        </svg>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, justifyContent: 'flex-end' }}>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Less</span>
+        {[0, 2, 5, 9, 12].map(v => (
+          <div key={v} style={{ width: 11, height: 11, borderRadius: 2, background: contribColor(v) }} />
+        ))}
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>More</span>
       </div>
     </div>
   );

@@ -186,15 +186,10 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
   const [filterText, setFilterText] = useState('');
   const [analysisStatus, setAnalysisStatus] = useState({});
   const [analysisResults, setAnalysisResults] = useState({});
-  const [repoChats, setRepoChats] = useState({}); // Stores { [repoId]: messages[] }
+  const [chatHistory, setChatHistory] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [showAllRepos, setShowAllRepos] = useState(false);
-  const [isChatMaximized, setIsChatMaximized] = useState(false);
-  const [activeSolution, setActiveSolution] = useState(null);
-
-  // Computed current chat history
-  const chatHistory = selectedRepo ? (repoChats[selectedRepo.repo_id] || []) : (repoChats['home'] || []);
 
   const chatHistoryRef = useRef(null);
   const authHeaders = { Authorization: `Bearer ${token}` };
@@ -270,8 +265,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
   const handleRepoSelect = async (repo) => {
     setSelectedRepo(repo);
-    // We don't clear, just implicitly switch via chatHistory computed ref.
-    // However, if it's the first time, we can leave it empty as per request.
+    setChatHistory([]); // Clear chat for new repo, start empty
 
     let currentStatus = null;
     if (!analysisStatus[repo.repo_id]) {
@@ -303,16 +297,10 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
   };
 
   const sendChat = async (presetQuestion = null) => {
-    const targetKey = selectedRepo ? selectedRepo.repo_id : 'home';
-    const currentHist = repoChats[targetKey] || [];
     const question = (typeof presetQuestion === 'string' ? presetQuestion : chatInput).trim();
     if (!question || chatLoading) return;
     if (!presetQuestion) setChatInput('');
-    
-    // Add user message to history
-    const userMsg = { role: 'user', text: question };
-    const historyWithUser = [...currentHist, userMsg];
-    setRepoChats(prev => ({ ...prev, [targetKey]: historyWithUser }));
+    setChatHistory((prev) => [...prev, { role: 'user', text: question }]);
     setChatLoading(true);
 
     try {
@@ -328,23 +316,25 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
           isRunning: isRunningNow,
           isAnalyzed: isAnalyzedNow,
         });
-        setRepoChats(prev => ({ ...prev, [targetKey]: [...historyWithUser, { role: 'bot', text: fallbackAnswer }] }));
+        setChatHistory((prev) => [...prev, { role: 'bot', text: fallbackAnswer }]);
         return;
       }
 
       const r = await fetch(`${SYSTEM_URL}/api/analysis/copilot/${selectedRepo.repo_id}`, {
         method: 'POST',
         headers: { ...authHeaders, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, history: currentHist }),
+        body: JSON.stringify({ question }),
       });
       const data = await r.json();
-      if (!r.ok) throw new Error(data?.detail || `Assistant failed with status ${r.status}`);
-      
+      if (!r.ok) {
+        const detail = data?.detail || `Assistant failed with status ${r.status}`;
+        throw new Error(detail);
+      }
       const answer = formatAssistantReport(data.answer || 'No response from AI.', question, selectedRepo);
-      setRepoChats(prev => ({ ...prev, [targetKey]: [...historyWithUser, { role: 'bot', text: answer }] }));
+      setChatHistory((prev) => [...prev, { role: 'bot', text: answer }]);
     } catch (err) {
-      const message = err?.message || 'Failed to reach BugSentry Assistant.';
-      setRepoChats(prev => ({ ...prev, [targetKey]: [...historyWithUser, { role: 'bot', text: `Warning: ${message}` }] }));
+      const message = err?.message || 'Failed to reach BugSentry Assistant. Please try again.';
+      setChatHistory((prev) => [...prev, { role: 'bot', text: `Warning: ${message}` }]);
     } finally {
       setChatLoading(false);
     }
@@ -408,7 +398,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
         </div>
 
         <div className="dev-topbar-right">
-          <button className="icon-btn" onClick={refetch} title="Sync repositories" style={{ marginRight: '8px' }}>
+          <button className="icon-btn" onClick={refetch} title="Sync repositories">
             <FiRefreshCw className={syncing ? 'spin' : ''} />
           </button>
 
@@ -451,11 +441,11 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
         <aside className="dev-sidebar-left">
           <div className="sidebar-nav-block">
             <ul className="sidebar-list">
-              <li onClick={() => { setSelectedRepo(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={!selectedRepo ? 'active' : ''}>
+              <li onClick={() => setSelectedRepo(null)} className={!selectedRepo ? 'active' : ''}>
                 <FiHome className="sidebar-icon" /><span>Home</span>
               </li>
               <li onClick={() => document.getElementById('risk-findings')?.scrollIntoView({ behavior: 'smooth' })}>
-                <FiFilter className="sidebar-icon" /><span>Risk Findings</span>
+                <FaBug className="sidebar-icon" /><span>Risk Findings</span>
               </li>
               <li onClick={() => document.getElementById('copilot-section')?.scrollIntoView({ behavior: 'smooth' })}>
                 <FiZap className="sidebar-icon" /><span>Assistant</span>
@@ -479,16 +469,16 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                 : displayedRepos.length === 0
                   ? <li className="no-repos-msg">{repos.length === 0 ? 'Syncing your GitHub repos...' : 'No repos match filter.'}</li>
                   : displayedRepos.map((repo) => (
-                      <li
-                        key={repo.repo_id}
-                        className={`repo-list-item ${selectedRepo?.repo_id === repo.repo_id ? 'selected' : ''}`}
-                        onClick={() => handleRepoSelect(repo)}
-                      >
-                        <span className={`status-dot ${statusDotClass(repo.repo_id)}`} />
-                        <span className="repo-name" title={repo.full_name}>{repo.full_name || repo.name}</span>
-                        <AnalysisBadge status={analysisStatus[repo.repo_id]} />
-                      </li>
-                    ))}
+                    <li
+                      key={repo.repo_id}
+                      className={`repo-list-item ${selectedRepo?.repo_id === repo.repo_id ? 'selected' : ''}`}
+                      onClick={() => handleRepoSelect(repo)}
+                    >
+                      <span className={`status-dot ${statusDotClass(repo.repo_id)}`} />
+                      <span className="repo-name" title={repo.full_name}>{repo.full_name || repo.name}</span>
+                      <AnalysisBadge status={analysisStatus[repo.repo_id]} />
+                    </li>
+                  ))}
             </ul>
 
             {filteredRepos.length > 6 && (
@@ -527,29 +517,15 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
           {!selectedRepo && (
             <>
 
-              <div className={`copilot-section integrated ${isChatMaximized ? 'maximized' : ''}`} id="copilot-section" style={{ marginTop: '0', marginBottom: '48px' }}>
+              <div className="copilot-section integrated" id="copilot-section" style={{ marginTop: '0', marginBottom: '48px' }}>
                 <div className="copilot-header" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <FiZap className="copilot-zap" style={{ color: '#58a6ff' }} />
                   <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>BugSentry Assistant</h3>
-                  <button 
-                    className="assistant-control-btn icon-only" 
-                    onClick={() => setIsChatMaximized(!isChatMaximized)}
-                    style={{ marginLeft: 'auto', border: 'none', background: 'transparent', padding: '4px' }}
-                    title={isChatMaximized ? 'Minimize' : 'Expand View'}
-                  >
-                    {isChatMaximized ? <FiChevronDown size={20} /> : <FiChevronUp size={20} />}
-                  </button>
                 </div>
 
                 {chatHistory.length > 0 && (
                   <div className="chat-history" ref={chatHistoryRef}>
-                    {chatHistory.map((msg, i) => (
-                      <ChatMessage 
-                        key={i} 
-                        msg={msg} 
-                        onViewSolution={(data) => setActiveSolution(data)} 
-                      />
-                    ))}
+                    {chatHistory.map((msg, i) => <ChatMessage key={i} msg={msg} />)}
                     {chatLoading && <TypingIndicator />}
                   </div>
                 )}
@@ -770,13 +746,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
               <div className="copilot-section integrated" id="copilot-section">
                 {chatHistory.length > 0 && (
                   <div className="chat-history" ref={chatHistoryRef}>
-                    {chatHistory.map((msg, i) => (
-                      <ChatMessage 
-                        key={i} 
-                        msg={msg} 
-                        onViewSolution={(data) => setActiveSolution(data)} 
-                      />
-                    ))}
+                    {chatHistory.map((msg, i) => <ChatMessage key={i} msg={msg} />)}
                     {chatLoading && <TypingIndicator />}
                   </div>
                 )}
@@ -832,35 +802,6 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
           )}
         </main>
       </div>
-
-      {activeSolution && (
-        <div className="modal-overlay" onClick={() => setActiveSolution(null)}>
-          <div className="solution-modal-card" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{activeSolution.title}</h2>
-              <button className="modal-close-btn" onClick={() => setActiveSolution(null)}>
-                <FiX size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="solution-description">
-                <p>This is a patch-ready remediation suggested by BugSentry AI. Review the implementation below before committing.</p>
-              </div>
-              
-              <div className="markdown-chat">
-                <ChatMessage msg={{ role: 'bot', text: activeSolution.content }} noTitle />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setActiveSolution(null)}>Close</button>
-              <button className="btn-primary" onClick={() => {
-                navigator.clipboard.writeText(activeSolution.content);
-                alert('Solution copied to clipboard!');
-              }}>Copy Solution</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
