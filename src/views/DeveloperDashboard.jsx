@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaBriefcase, FaDocker, FaCode, FaShieldAlt, FaBug, FaLightbulb } from 'react-icons/fa';
 import {
-  FiMenu, FiSearch, FiInbox, FiMessageSquare, FiRefreshCw, FiZap,
+  FiMessageSquare, FiRefreshCw, FiZap,
   FiFilter, FiStar, FiGitBranch, FiAlertCircle, FiShield, FiX, FiSend, FiChevronDown, FiChevronUp, FiCpu
 } from 'react-icons/fi';
 import { useUser } from '../hooks/useUser';
@@ -151,7 +151,6 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
   };
 
   const handleRepoSelect = async (repo) => {
-    if (selectedRepo?.repo_id === repo.repo_id) return;
     setSelectedRepo(repo);
     setChatHistory([]);
 
@@ -179,7 +178,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
       currentStatus = analysisStatus[repo.repo_id];
     }
 
-    if (AUTO_RUN_ON_REPO_SELECT && currentStatus !== 'running' && currentStatus !== 'completed') {
+    if (AUTO_RUN_ON_REPO_SELECT && currentStatus !== 'running') {
       runAnalysis(repo);
     }
   };
@@ -248,6 +247,13 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
     : (insight.probable_failures || [])).slice(0, 5);
   const fixPlan = (insight.fix_plan || []).slice(0, 5);
   const topRiskyFiles = (deepReport.top_risky_files || []).slice(0, 8);
+  const repoBriefPoints = [
+    `Repository: ${selectedRepo?.full_name || selectedRepo?.name || 'N/A'}`,
+    `Scope: ${repoStructure.total_files || 0} files across ${repoStructure.total_directories || 0} directories`,
+    `Risk Signals: ${topRiskyFiles.length || 0} risky files detected in latest scan`,
+    `Summary: ${(insight.architecture_summary || 'Architecture details are being generated.').slice(0, 140)}`,
+    `Guidance: ${(insight.final_guidance || 'Use Copilot for patch-ready remediation by file path.').slice(0, 120)}`,
+  ];
 
   return (
     <div className="dev-dashboard-layout">
@@ -257,16 +263,8 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
       <header className="dev-topbar">
         <div className="dev-topbar-left">
-          <button className="icon-btn"><FiMenu /></button>
           <img src="/logo.png" alt="Bugsentry Logo" className="dev-logo" />
           <span className="dev-topbar-title">{selectedRepo ? selectedRepo.full_name : 'Dashboard'}</span>
-        </div>
-
-        <div className="dev-topbar-center">
-          <div className="dev-search-bar">
-            <FiSearch className="search-icon" />
-            <input type="text" placeholder="Type / to search" />
-          </div>
         </div>
 
         <div className="dev-topbar-right">
@@ -276,17 +274,16 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
           <button className="icon-btn" onClick={refetch} title="Sync repositories">
             <FiRefreshCw className={syncing ? 'spin' : ''} />
           </button>
-          <button className="icon-btn"><FiInbox title="Notifications" /></button>
-          
+
           <div className="user-menu-wrapper" ref={userMenuRef}>
-            <div className="profile-trigger" onClick={() => setShowUserMenu(!showUserMenu)}>
+            <button type="button" className="profile-trigger" onClick={() => setShowUserMenu((prev) => !prev)}>
               {user?.picture ? (
                 <img src={user.picture} alt="avatar" className="dev-user-avatar-img" />
               ) : (
                 <div className="dev-user-avatar" />
               )}
               <FiChevronDown style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }} />
-            </div>
+            </button>
 
             {showUserMenu && (
               <div className="profile-menu-dropdown">
@@ -297,7 +294,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                   </strong>
                 </div>
                 <div className="menu-list" style={{ padding: '8px' }}>
-                  <button className="menu-item"><FiSearch size={14} /> Profile</button>
+                  <button className="menu-item"><FiMessageSquare size={14} /> Profile</button>
                   <button className="menu-item"><FiStar size={14} /> Settings</button>
                   <div className="menu-divider" />
                   <button className="menu-item logout" onClick={onLogout}>
@@ -312,6 +309,16 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
       <div className="dev-main-grid">
         <aside className="dev-sidebar-left">
+          <div className="sidebar-nav-block">
+            <h4 className="sidebar-subhead">Dashboard Navigation</h4>
+            <ul className="sidebar-list">
+              <li><FaShieldAlt className="sidebar-icon" /><span>Overview</span></li>
+              <li><FaBug className="sidebar-icon" /><span>Risk Findings</span></li>
+              <li><FiZap className="sidebar-icon" /><span>Copilot</span></li>
+            </ul>
+            <hr className="sidebar-divider" />
+          </div>
+
           <div className="dev-sidebar-user-fix">
              {user?.picture ? (
                <img src={user.picture} alt="avatar" className="dev-user-avatar-img small" />
@@ -477,10 +484,11 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
                   <div className="analysis-grid">
                     <div className="summary-card">
-                      <div className="card-header"><FaShieldAlt className="header-icon" /><h3>Architecture Snapshot</h3></div>
+                      <div className="card-header"><FaShieldAlt className="header-icon" /><h3>Repository Brief</h3></div>
                       <div className="card-body">
-                        <p className="summary-p">{insight.architecture_summary}</p>
-                        <p className="mini-note">{insight.final_guidance}</p>
+                        <ul className="brief-points">
+                          {repoBriefPoints.map((point, index) => <li key={`brief-${index}`}>{point}</li>)}
+                        </ul>
                       </div>
                     </div>
 
