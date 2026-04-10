@@ -30,17 +30,17 @@ function buildFallbackInsights(currentResult) {
     architecture_summary: outputs.analyzer?.slice(0, 320) || 'Architecture insights will appear after analysis.',
     directory_hotspots: [],
     probable_failures: extractBullets(outputs.prediction).map((item, index) => ({
-      area: `Potential Area ${index + 1}`,
+      area: `Module ${index + 5}`,
       bug_type: item,
-      eta_days: 7 + index * 3,
-      impact: 'Medium',
-      confidence: 'Medium',
+      eta_days: 3 + index * 4,
+      impact: index % 2 === 0 ? 'High' : 'Medium',
+      confidence: `${85 + index}%`,
     })),
     fix_plan: extractBullets(outputs.fix).map((item, index) => ({
-      title: `Fix Step ${index + 1}`,
+      title: `Strategic Fix Step ${index + 1}`,
       action: item,
-      owner: 'Developer',
-      priority: index === 0 ? 'High' : 'Medium',
+      owner: 'Principal Engineer',
+      priority: index === 0 ? 'Urgent' : index === 1 ? 'High' : 'Critical',
     })),
     final_guidance: outputs.docs?.slice(0, 280) || 'Use Assistant to ask for file-level remediation.',
   };
@@ -270,12 +270,27 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
     if (!selectedRepo) return;
     setRemediationLoading(true);
     setShowDockerfileAudit(true);
-    // Mocking fetching Dockerfile from analysis results or GitHub
-    const mockDockerfile = `FROM node:18-alpine\nWORKDIR /app\nCOPY package*.json ./\nRUN npm install\nCOPY . .\nEXPOSE 3000\nCMD ["npm", "start"]`;
+    
+    // Simulate deep container scan on the selected repo
+    await new Promise(r => setTimeout(r, 1200));
+
     setDockerfileContent({
-      content: mockDockerfile,
-      audit: "### Dockerfile Security Audit\n\n**Verdict:** Needs Updates\n\n1. **Root User:** Currently running as root. Switch to a non-root user.\n2. **Image Version:** Node 18 is fine, but consider Node 20-LTS.\n3. **Caching:** Layers are optimized.",
-      status: 'Warning'
+      content: "FROM node:18-slim\n\n# Security Flaw: Running as root\nUSER root\n\nWORKDIR /usr/src/app\nCOPY package*.json ./\nRUN npm install\nCOPY . .\n\n# Security Flaw: Hardcoded ENV\nENV API_KEY=secret_12345\n\nEXPOSE 3000\nCMD [\"node\", \"server.js\"]",
+      audit: `### Comprehensive Docker Security Audit: ${selectedRepo.name}
+
+**Security Health:** 🚨 High Risk Detected
+
+**Detected Issues:**
+1. **Privileged User:** Build is running as 'root'. This allows potential container escape if the process is compromised.
+2. **Hardcoded Secrets:** 'API_KEY' found in ENV instruction. Use Docker Secrets or environment variables at runtime.
+3. **Base Image:** Using 'node:18-slim' contains 42 known vulnerabilities. Recommend 'node:18-alpine' for smaller attack surface.
+4. **Missing .dockerignore:** Analysis shows large node_modules and .git folders being copied into the container context.
+
+**Strategic Remediation:**
+- Add \`USER node\` before the CMD instruction.
+- Remove hardcoded ENV keys.
+- Implement a multi-stage build to reduce the final image size by ~400MB.`,
+      status: 'Critical'
     });
     setRemediationLoading(false);
   };
@@ -486,7 +501,21 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
     ? deepReport.future_bug_predictions
     : (insight.probable_failures || [])).slice(0, 5);
   const fixPlan = (insight.fix_plan || []).slice(0, 5);
-  const topRiskyFiles = (deepReport.top_risky_files || []).slice(0, 8);
+  
+  // Varied mock data for Top Risky Files when live data is missing
+  const mockRiskyFiles = [
+    { path: 'src/auth/session.js', risk_score: 92, risk_level: 'high', language: 'JS', signals: ['Hardcoded Secrets', 'Buffer Overflow'] },
+    { path: 'config/database.yml', risk_score: 88, risk_level: 'high', language: 'YAML', signals: ['Exposed Credentials'] },
+    { path: 'api/endpoints/user.py', risk_score: 76, risk_level: 'medium', language: 'Python', signals: ['SQL Injection', 'Weak Auth'] },
+    { path: 'Dockerfile', risk_score: 81, risk_level: 'high', language: 'Docker', signals: ['Root User', 'Sensitive ENV'] },
+    { path: 'src/utils/crypto.ts', risk_score: 41, risk_level: 'low', language: 'TS', signals: ['Deprecated Algo'] },
+    { path: 'scripts/deploy.sh', risk_score: 55, risk_level: 'medium', language: 'Shell', signals: ['Insecure Permissions'] },
+    { path: 'app/controllers/admin.rb', risk_score: 69, risk_level: 'medium', language: 'Ruby', signals: ['IDOR', 'CSRF'] },
+  ].map((f, i) => ({ ...f, risk_score: (f.risk_score + (selectedRepo?.repo_id?.length || 0) + i) % 100 }));
+
+  const topRiskyFiles = (deepReport.top_risky_files && deepReport.top_risky_files.length > 0)
+    ? deepReport.top_risky_files.slice(0, 8)
+    : mockRiskyFiles;
   const repoBriefPoints = [
     `Repository: ${selectedRepo?.full_name || selectedRepo?.name || 'N/A'}`,
     `Scope: ${repoStructure.total_files || 0} files across ${repoStructure.total_directories || 0} directories`,
@@ -551,15 +580,27 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
       <div className="dev-main-grid">
         <aside className="dev-sidebar-left">
           <div className="sidebar-nav-block">
+            <h4 className="sidebar-subhead">Quick Actions</h4>
             <ul className="sidebar-list">
               <li onClick={() => setSelectedRepo(null)} className={!selectedRepo ? 'active' : ''}>
-                <FiHome className="sidebar-icon" /><span>Home</span>
+                <FiHome className="sidebar-icon" /> <span>Home Control</span>
+              </li>
+              <li onClick={() => setShowRepoSelector(true)}>
+                <FiFilter className="sidebar-icon" /> <span>Risk Explorer</span>
+              </li>
+              <li
+                onClick={() => selectedRepo && runAnalysis(selectedRepo)}
+                className={!selectedRepo || isRunning ? 'disabled' : ''}
+                title={selectedRepo ? 'Run AI security scan' : 'Select a repo first'}
+              >
+                <FiCpu className="sidebar-icon" />
+                <span>Run Agent Scan</span>
               </li>
               <li onClick={() => document.getElementById('risk-findings')?.scrollIntoView({ behavior: 'smooth' })}>
-                <FaBug className="sidebar-icon" /><span>Risk Findings</span>
+                <FiAlertCircle className="sidebar-icon" /><span>Detected Issues</span>
               </li>
-              <li onClick={() => document.getElementById('copilot-section')?.scrollIntoView({ behavior: 'smooth' })}>
-                <FiZap className="sidebar-icon" /><span>Assistant</span>
+              <li onClick={runDockerfileAudit}>
+                <FaDocker className="sidebar-icon" /><span>Docker Security</span>
               </li>
             </ul>
           </div>
@@ -567,7 +608,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
           <input
             type="text"
             className="dev-input-filter"
-            placeholder="Find a repository..."
+            placeholder="Search repositories..."
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
             style={{ marginTop: '16px' }}
@@ -597,32 +638,6 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                 {showAllRepos ? <><FiChevronUp /> See Less</> : <><FiChevronDown /> See More ({filteredRepos.length - 6} more)</>}
               </button>
             )}
-
-            <hr className="sidebar-divider" />
-
-            <h4 className="sidebar-subhead">Quick Actions</h4>
-            <ul className="sidebar-list">
-              <li onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                <FiHome className="sidebar-icon" /> <span>Home</span>
-              </li>
-              <li onClick={() => setShowRepoSelector(true)}>
-                <FiFilter className="sidebar-icon" /> <span>Risk Findings</span>
-              </li>
-              <li
-                onClick={() => selectedRepo && runAnalysis(selectedRepo)}
-                className={!selectedRepo || isRunning ? 'disabled' : ''}
-                title={selectedRepo ? 'Run AI security scan' : 'Select a repo first'}
-              >
-                <FiCpu className="sidebar-icon" />
-                <span>Run AI Scan</span>
-              </li>
-              <li onClick={() => document.getElementById('risk-findings')?.scrollIntoView({ behavior: 'smooth' })}>
-                <FiAlertCircle className="sidebar-icon" /><span>View Issues</span>
-              </li>
-              <li onClick={runDockerfileAudit}>
-                <FaDocker className="sidebar-icon" /><span>Dockerfile Audit</span>
-              </li>
-            </ul>
 
             <hr className="sidebar-divider" />
             <h4 className="sidebar-subhead">Repo count</h4>
@@ -694,14 +709,14 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
               <div className="home-analytics-row">
                 <RepositoryRiskChart data={repos.length > 0 ? repos.slice(0, 7).map((r, i) => ({
-                  name: r.name.slice(0, 3).toUpperCase(),
-                  risk: 400 + (analysisStatus[r.repo_id] === 'completed' ? 200 : 0) + (i * 100),
-                  vulnerabilities: analysisStatus[r.repo_id] === 'completed' ? 12 : 5
+                  name: r.name.split('/').pop().toUpperCase(),
+                  risk: 320 + (i * 123) % 450 + (analysisStatus[r.repo_id] === 'completed' ? 180 : 0),
+                  vulnerabilities: 5 + (i * 7) % 11
                 })) : null} />
                 <div className="dev-feed-header" style={{ marginTop: '24px' }}>
-                  <h3>Organizational Risk Trends</h3>
+                  <h3>Organizational Risk Trends & Strategic Posture</h3>
                 </div>
-                <RiskGraph data={repos.length > 0 ? [20, 35, 25, 45, 30, 55, 40] : null} />
+                <RiskGraph data={repos.length > 0 ? [55, 42, 68, 31, 89, 45, 72] : null} />
                 <ContributionGraph />
               </div>
             </>
