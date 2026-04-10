@@ -206,6 +206,18 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
   const [showAllRepos, setShowAllRepos] = useState(false);
   const [isChatMaximized, setIsChatMaximized] = useState(false);
   const [activeSolution, setActiveSolution] = useState(null);
+  const [expandedSections, setExpandedSections] = useState({
+    brief: true,
+    riskyFiles: false,
+    bugs: false,
+    hotspots: false,
+    solution: false,
+    directory: false
+  });
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
 
   // Computed current chat history
   const chatHistory = selectedRepo ? (repoChats[selectedRepo.repo_id] || []) : (repoChats['home'] || []);
@@ -680,139 +692,191 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
                   <div className="analysis-grid vertical-brief">
                     <div className="summary-card full-width">
-                      <div className="card-header"><FaBriefcase className="header-icon" /><h3>Repository Brief</h3></div>
-                      <div className="card-body">
-                        <div className="brief-vertical-list">
-                          {repoBriefPoints.map((point, index) => (
-                            <div key={`brief-${index}`} className="brief-vertical-item">
-                              <span className="brief-bullet" />
-                              <p>{point}</p>
+                      <div className="card-header collapsible" onClick={() => toggleSection('brief')}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <FaBriefcase className="header-icon" /><h3>Repository Brief</h3>
+                        </div>
+                        {expandedSections.brief ? <FiChevronUp /> : <FiChevronDown />}
+                      </div>
+                      {expandedSections.brief && (
+                        <div className="card-body animate-slide-down">
+                          <div className="brief-vertical-list">
+                            {repoBriefPoints.map((point, index) => (
+                              <div key={`brief-${index}`} className="brief-vertical-item">
+                                <span className="brief-bullet" />
+                                <p>{point}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="summary-card">
+                    <div className="card-header collapsible" onClick={() => toggleSection('riskyFiles')}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FiShield className="header-icon" /><h3>Detected Risky Files (Automated Audit)</h3>
+                      </div>
+                      {expandedSections.riskyFiles ? <FiChevronUp /> : <FiChevronDown />}
+                    </div>
+                    {expandedSections.riskyFiles && (
+                      <div className="card-body animate-slide-down">
+                        <div className="risk-file-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                          {topRiskyFiles.length === 0 && <p className="mini-note">Risky file list is not available yet. Run agents again for deep scan results.</p>}
+                          {topRiskyFiles.map((file, idx) => (
+                            <div key={`${file.path}-${idx}`} className="risk-file-item creative">
+                              <div className="risk-file-top">
+                                <strong className="file-path-text">{file.path.split('/').pop()}</strong>
+                                <span className={`risk-badge-elite ${file.risk_level || 'low'}`}>{file.risk_score ?? 0}% Risk</span>
+                              </div>
+                              <div className="severity-bar-container">
+                                <div className={`severity-bar-fill ${file.risk_level || 'low'}`} style={{ width: `${file.risk_score ?? 20}%` }} />
+                              </div>
+                              <p className="file-sub-text">{file.path}</p>
+                              <p className="risk-signal-tags">{(file.signals || []).slice(0, 3).map(s => <span key={s} className="signal-tag">{s}</span>)}</p>
+                              <div className="risk-footer">
+                                <div className="risk-meta">Language: <strong>{file.language || 'JS'}</strong></div>
+                                <button className="btn-details-mini" onClick={(e) => { e.stopPropagation(); setActiveSolution({
+                                  title: `Risk Analysis: ${file.path}`,
+                                  content: `### Risk Breakdown\n\n**File Path:** ${file.path}\n**Risk Level:** ${file.risk_level}\n**Score:** ${file.risk_score}%\n\n#### Detected Signals:\n${(file.signals || []).map(s => `- ${s}`).join('\n')}\n\n#### Primary Risk Analysis:\n${file.primary_risk || 'The automated scanner identified patterns consistent with potential security vulnerabilities.'}\n\n#### Recommended Remediation:\n\`\`\`javascript\n// AI-Generated Remediation Strategy for ${file.path}\nfunction validateAndSanitize(data) {\n  if (typeof data !== "string") return "";\n  return data.replace(/[^a-zA-Z0-9]/g, "");\n}\n\`\`\``
+                                }); }}>Analyze Risk</button>
+                              </div>
                             </div>
                           ))}
                         </div>
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="summary-card">
-                    <div className="card-header"><FiShield className="header-icon" /><h3>Detected Risky Files (Automated Audit)</h3></div>
-                    <div className="risk-file-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                      {topRiskyFiles.length === 0 && <p className="mini-note">Risky file list is not available yet. Run agents again for deep scan results.</p>}
-                      {topRiskyFiles.map((file, idx) => (
-                        <div key={`${file.path}-${idx}`} className="risk-file-item creative">
-                          <div className="risk-file-top">
-                            <strong className="file-path-text">{file.path.split('/').pop()}</strong>
-                            <span className={`risk-badge-elite ${file.risk_level || 'low'}`}>{file.risk_score ?? 0}% Risk</span>
-                          </div>
-                          <div className="severity-bar-container">
-                            <div className={`severity-bar-fill ${file.risk_level || 'low'}`} style={{ width: `${file.risk_score ?? 20}%` }} />
-                          </div>
-                          <p className="file-sub-text">{file.path}</p>
-                          <p className="risk-signal-tags">{(file.signals || []).slice(0, 3).map(s => <span key={s} className="signal-tag">{s}</span>)}</p>
-                          <div className="risk-footer">
-                            <div className="risk-meta">Language: <strong>{file.language || 'JS'}</strong></div>
-                            <button className="btn-details-mini" onClick={() => setActiveSolution({
-                              title: `Risk Analysis: ${file.path}`,
-                              content: `### Risk Breakdown\n\n**File Path:** ${file.path}\n**Risk Level:** ${file.risk_level}\n**Score:** ${file.risk_score}%\n\n#### Detected Signals:\n${(file.signals || []).map(s => `- ${s}`).join('\n')}\n\n#### Primary Risk Analysis:\n${file.primary_risk || 'The automated scanner identified patterns consistent with potential security vulnerabilities.'}\n\n#### Recommended Remediation:\n\`\`\`javascript\n// AI-Generated Remediation Strategy for ${file.path}\nfunction validateAndSanitize(data) {\n  if (typeof data !== "string") return "";\n  return data.replace(/[^a-zA-Z0-9]/g, "");\n}\n\`\`\``
-                            })}>Analyze Risk</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    )}
                   </div>
 
                   <div className="summary-card" id="risk-findings">
-                    <div className="card-header"><FaBug className="header-icon" /><h3>Bug Prediction Timeline (ETA + Impact)</h3></div>
-                    <div className="timeline-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                      {probableFailures.length === 0 && <p className="mini-note">No structured failure timeline available yet. Re-run scan or ask Assistant for file-level bugs.</p>}
-                      {probableFailures.map((row, idx) => (
-                        <div key={`${row.area}-${idx}`} className="timeline-item-card creative">
-                          <div className="timeline-head">
-                            <div className="area-title">
-                              <FiAlertCircle className={`icon-${row.impact?.toLowerCase() || 'medium'}`} />
-                              <strong>{row.area || `Area ${idx + 1}`}</strong>
-                            </div>
-                            <span className="eta-badge">{row.eta_days ? `ETA: ${row.eta_days}d` : 'Unknown ETA'}</span>
-                          </div>
-                          <p className="bug-description">{row.bug_type}</p>
-                          <div className="confidence-meter">
-                            <label>Confidence</label>
-                            <div className="dot-meter">
-                              {[1, 2, 3, 4, 5].map(i => <span key={i} className={`dot ${i <= (row.confidence === 'High' ? 5 : 3) ? 'active' : ''}`} />)}
-                            </div>
-                          </div>
-                          <div className="timeline-footer">
-                            <div className="timeline-meta">
-                              <span>Impact: <strong>{row.impact || 'Medium'}</strong></span>
-                            </div>
-                            <button className="btn-details-mini" onClick={() => setActiveSolution({
-                              title: `Failure Prediction: ${row.area}`,
-                              content: `### Predictive Failure Report\n\n**Area:** ${row.area}\n**Predicted Issue:** ${row.bug_type}\n**Estimated Window:** ${row.eta_days} days\n\n#### Architecture Impact:\nThe projected impact is **${row.impact}**. This module interacts with high-traffic controllers.\n\n#### Recommended Action Plan:\n1. Re-evaluate the state management in this area.\n2. Add defensive checks for null/undefined objects.\n3. Implement a retry mechanism for downstream calls.`
-                            })}>View Architecture</button>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="card-header collapsible" onClick={() => toggleSection('bugs')}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaBug className="header-icon" /><h3>Bug Prediction Timeline (ETA + Impact)</h3>
+                      </div>
+                      {expandedSections.bugs ? <FiChevronUp /> : <FiChevronDown />}
                     </div>
+                    {expandedSections.bugs && (
+                      <div className="card-body animate-slide-down">
+                        <div className="timeline-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                          {probableFailures.length === 0 && <p className="mini-note">No structured failure timeline available yet. Re-run scan or ask Assistant for file-level bugs.</p>}
+                          {probableFailures.map((row, idx) => (
+                            <div key={`${row.area}-${idx}`} className="timeline-item-card creative">
+                              <div className="timeline-head">
+                                <div className="area-title">
+                                  <FiAlertCircle className={`icon-${row.impact?.toLowerCase() || 'medium'}`} />
+                                  <strong>{row.area || `Area ${idx + 1}`}</strong>
+                                </div>
+                                <span className="eta-badge">{row.eta_days ? `ETA: ${row.eta_days}d` : 'Unknown ETA'}</span>
+                              </div>
+                              <p className="bug-description">{row.bug_type}</p>
+                              <div className="confidence-meter">
+                                <label>Confidence</label>
+                                <div className="dot-meter">
+                                  {[1, 2, 3, 4, 5].map(i => <span key={i} className={`dot ${i <= (row.confidence === 'High' ? 5 : 3) ? 'active' : ''}`} />)}
+                                </div>
+                              </div>
+                              <div className="timeline-footer">
+                                <div className="timeline-meta">
+                                  <span>Impact: <strong>{row.impact || 'Medium'}</strong></span>
+                                </div>
+                                <button className="btn-details-mini" onClick={(e) => { e.stopPropagation(); setActiveSolution({
+                                  title: `Failure Prediction: ${row.area}`,
+                                  content: `### Predictive Failure Report\n\n**Area:** ${row.area}\n**Predicted Issue:** ${row.bug_type}\n**Estimated Window:** ${row.eta_days} days\n\n#### Architecture Impact:\nThe projected impact is **${row.impact}**. This module interacts with high-traffic controllers.\n\n#### Recommended Action Plan:\n1. Re-evaluate the state management in this area.\n2. Add defensive checks for null/undefined objects.\n3. Implement a retry mechanism for downstream calls.`
+                                }); }}>View Architecture</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {directoryHotspots.length > 0 && (
                     <div className="summary-card">
-                      <div className="card-header"><FiAlertCircle className="header-icon" /><h3>High-Risk Directories</h3></div>
-                      <div className="hotspot-grid">
-                        {directoryHotspots.map((spot, idx) => (
-                          <div key={`${spot.path}-${idx}`} className="hotspot-card">
-                            <div className="hotspot-main">
-                              <h4>{spot.path}</h4>
-                              <p>{spot.risk_reason}</p>
-                              <span>{spot.severity || 'Medium'} Risk</span>
-                            </div>
-                            <button className="btn-details-mini" onClick={() => setActiveSolution({
-                              title: `Directory Health: ${spot.path}`,
-                              content: `### Directory Analysis\n\n**Path:** ${spot.path}\n**Severity:** ${spot.severity}\n\n#### Health Status:\nThis directory handles sensitive data but lacks robust validation patterns.\n\n#### Recommended Strategy:\nApply a strict input-output mapping policy for all files in this directory to ensure data integrity.`
-                            })}>Full Guide</button>
-                          </div>
-                        ))}
+                      <div className="card-header collapsible" onClick={() => toggleSection('hotspots')}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <FiAlertCircle className="header-icon" /><h3>High-Risk Directories</h3>
+                        </div>
+                        {expandedSections.hotspots ? <FiChevronUp /> : <FiChevronDown />}
                       </div>
+                      {expandedSections.hotspots && (
+                        <div className="card-body animate-slide-down">
+                          <div className="hotspot-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                            {directoryHotspots.map((spot, idx) => (
+                              <div key={`${spot.path}-${idx}`} className="hotspot-card">
+                                <div className="hotspot-main">
+                                  <h4>{spot.path}</h4>
+                                  <p>{spot.risk_reason}</p>
+                                  <span>{spot.severity || 'Medium'} Risk</span>
+                                </div>
+                                <button className="btn-details-mini" onClick={(e) => { e.stopPropagation(); setActiveSolution({
+                                  title: `Directory Health: ${spot.path}`,
+                                  content: `### Directory Analysis\n\n**Path:** ${spot.path}\n**Severity:** ${spot.severity}\n\n#### Health Status:\nThis directory handles sensitive data but lacks robust validation patterns.\n\n#### Recommended Strategy:\nApply a strict input-output mapping policy for all files in this directory to ensure data integrity.`
+                                }); }}>Full Guide</button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
                   <div className="summary-card">
-                    <div className="card-header"><FaLightbulb className="header-icon" /><h3>Solution Guide (Action Plan)</h3></div>
-                    <div className="fix-plan-list">
-                      {fixPlan.length === 0 && <p className="mini-note">Fix plan unavailable in current run. Ask Assistant: Give patch-ready fixes by file path.</p>}
-                      {fixPlan.map((fix, idx) => (
-                        <div key={`${fix.title}-${idx}`} className="fix-plan-item">
-                          <div className="fix-plan-main">
-                            <h4>{fix.title || `Fix ${idx + 1}`}</h4>
-                            <p>{fix.action}</p>
-                            <div className="fix-meta">
-                              <span>Priority: {fix.priority || 'Medium'}</span>
-                              <span>Owner: {fix.owner || 'Developer'}</span>
-                            </div>
-                          </div>
-                          <button className="btn-details-mini highlight" onClick={() => setActiveSolution({
-                            title: fix.title,
-                            content: `### Detailed Fix Plan\n\n**Objective:** ${fix.title}\n**Priority:** ${fix.priority}\n\n#### Proposed Implementation:\n\`\`\`javascript\n// Security fix for ${fix.title}\n// Implementation of: ${fix.action}\nexport const securedModule = (data) => {\n  return applySecurityWrappers(data);\n};\n\`\`\``
-                          })}>Generate Code</button>
-                        </div>
-                      ))}
+                    <div className="card-header collapsible" onClick={() => toggleSection('solution')}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaLightbulb className="header-icon" /><h3>Solution Guide (Action Plan)</h3>
+                      </div>
+                      {expandedSections.solution ? <FiChevronUp /> : <FiChevronDown />}
                     </div>
+                    {expandedSections.solution && (
+                      <div className="card-body animate-slide-down">
+                        <div className="fix-plan-list">
+                          {fixPlan.length === 0 && <p className="mini-note">Fix plan unavailable in current run. Ask Assistant: Give patch-ready fixes by file path.</p>}
+                          {fixPlan.map((fix, idx) => (
+                            <div key={`${fix.title}-${idx}`} className="fix-plan-item">
+                              <div className="fix-plan-main">
+                                <h4>{fix.title || `Fix ${idx + 1}`}</h4>
+                                <p>{fix.action}</p>
+                                <div className="fix-meta">
+                                  <span>Priority: {fix.priority || 'Medium'}</span>
+                                  <span>Owner: {fix.owner || 'Developer'}</span>
+                                </div>
+                              </div>
+                              <button className="btn-details-mini highlight" onClick={(e) => { e.stopPropagation(); setActiveSolution({
+                                title: fix.title,
+                                content: `### Detailed Fix Plan\n\n**Objective:** ${fix.title}\n**Priority:** ${fix.priority}\n\n#### Proposed Implementation:\n\`\`\`javascript\n// Security fix for ${fix.title}\n// Implementation of: ${fix.action}\nexport const securedModule = (data) => {\n  return applySecurityWrappers(data);\n};\n\`\`\``
+                              }); }}>Generate Code</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="summary-card directory-overview-card">
-                    <div className="card-header"><FaCode className="header-icon" /><h3>Project Architecture & File System</h3></div>
-                    <div className="tree-view-elite">
-                      {treeRows.length === 0 && <p className="mini-note">Directory scan unavailable for this run.</p>}
-                      {treeRows.map((row, idx) => (
-                        <div key={`${row.type}-${row.path}-${idx}`} className={`tree-row-elite ${row.type}`}>
-                          <span className="tree-indent" style={{ width: `${row.depth * 16}px` }}></span>
-                          <span className="tree-line" />
-                          <span className="tree-icon">{row.type === 'dir' ? '📁' : '📄'}</span>
-                          <span className="tree-label">{row.path.split('/').pop()}</span>
-                          <span className="tree-path-full">{row.path}</span>
-                        </div>
-                      ))}
+                    <div className="card-header collapsible" onClick={() => toggleSection('directory')}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaCode className="header-icon" /><h3>Project Architecture & File System</h3>
+                      </div>
+                      {expandedSections.directory ? <FiChevronUp /> : <FiChevronDown />}
                     </div>
+                    {expandedSections.directory && (
+                      <div className="card-body animate-slide-down">
+                        <div className="tree-view-elite">
+                          {treeRows.length === 0 && <p className="mini-note">Directory scan unavailable for this run.</p>}
+                          {treeRows.map((row, idx) => (
+                            <div key={`${row.type}-${row.path}-${idx}`} className={`tree-row-elite ${row.type}`}>
+                              <span className="tree-indent" style={{ width: `${row.depth * 16}px` }}></span>
+                              <span className="tree-line" />
+                              <span className="tree-icon">{row.type === 'dir' ? '📁' : '📄'}</span>
+                              <span className="tree-label">{row.path.split('/').pop()}</span>
+                              <span className="tree-path-full">{row.path}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

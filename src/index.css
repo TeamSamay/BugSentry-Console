@@ -4507,3 +4507,38 @@ a.auth-btn {
   opacity: 1;
 }
 
+
+/* Collapsible Section Styles */
+.card-header.collapsible {
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+.card-header.collapsible:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+@keyframes slideDown {
+  from { 
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-header svg.header-icon {
+  transition: transform 0.2s;
+}
+
+.collapsible:hover svg.header-icon {
+  transform: scale(1.1);
+}
+
