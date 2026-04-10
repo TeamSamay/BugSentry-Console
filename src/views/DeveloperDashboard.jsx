@@ -186,11 +186,14 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
   const [filterText, setFilterText] = useState('');
   const [analysisStatus, setAnalysisStatus] = useState({});
   const [analysisResults, setAnalysisResults] = useState({});
-  const [chatHistory, setChatHistory] = useState([]);
+  const [repoChats, setRepoChats] = useState({}); // Stores { [repoId]: messages[] }
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [showAllRepos, setShowAllRepos] = useState(false);
   const [isChatMaximized, setIsChatMaximized] = useState(false);
+
+  // Computed current chat history
+  const chatHistory = selectedRepo ? (repoChats[selectedRepo.repo_id] || []) : (repoChats['home'] || []);
 
   const chatHistoryRef = useRef(null);
   const authHeaders = { Authorization: `Bearer ${token}` };
@@ -266,7 +269,8 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
   const handleRepoSelect = async (repo) => {
     setSelectedRepo(repo);
-    setChatHistory([]); // Clear chat for new repo, start empty
+    // We don't clear, just implicitly switch via chatHistory computed ref.
+    // However, if it's the first time, we can leave it empty as per request.
 
     let currentStatus = null;
     if (!analysisStatus[repo.repo_id]) {
@@ -298,10 +302,16 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
   };
 
   const sendChat = async (presetQuestion = null) => {
+    const targetKey = selectedRepo ? selectedRepo.repo_id : 'home';
+    const currentHist = repoChats[targetKey] || [];
     const question = (typeof presetQuestion === 'string' ? presetQuestion : chatInput).trim();
     if (!question || chatLoading) return;
     if (!presetQuestion) setChatInput('');
-    setChatHistory((prev) => [...prev, { role: 'user', text: question }]);
+    
+    // Add user message to history
+    const userMsg = { role: 'user', text: question };
+    const historyWithUser = [...currentHist, userMsg];
+    setRepoChats(prev => ({ ...prev, [targetKey]: historyWithUser }));
     setChatLoading(true);
 
     try {
@@ -317,25 +327,23 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
           isRunning: isRunningNow,
           isAnalyzed: isAnalyzedNow,
         });
-        setChatHistory((prev) => [...prev, { role: 'bot', text: fallbackAnswer }]);
+        setRepoChats(prev => ({ ...prev, [targetKey]: [...historyWithUser, { role: 'bot', text: fallbackAnswer }] }));
         return;
       }
 
       const r = await fetch(`${SYSTEM_URL}/api/analysis/copilot/${selectedRepo.repo_id}`, {
         method: 'POST',
         headers: { ...authHeaders, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, history: currentHist }),
       });
       const data = await r.json();
-      if (!r.ok) {
-      const detail = data?.detail || `Assistant failed with status ${r.status}`;
-      throw new Error(detail);
-    }
+      if (!r.ok) throw new Error(data?.detail || `Assistant failed with status ${r.status}`);
+      
       const answer = formatAssistantReport(data.answer || 'No response from AI.', question, selectedRepo);
-      setChatHistory((prev) => [...prev, { role: 'bot', text: answer }]);
+      setRepoChats(prev => ({ ...prev, [targetKey]: [...historyWithUser, { role: 'bot', text: answer }] }));
     } catch (err) {
-      const message = err?.message || 'Failed to reach BugSentry Assistant. Please try again.';
-      setChatHistory((prev) => [...prev, { role: 'bot', text: `Warning: ${message}` }]);
+      const message = err?.message || 'Failed to reach BugSentry Assistant.';
+      setRepoChats(prev => ({ ...prev, [targetKey]: [...historyWithUser, { role: 'bot', text: `Warning: ${message}` }] }));
     } finally {
       setChatLoading(false);
     }

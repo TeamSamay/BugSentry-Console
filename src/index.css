@@ -3404,3 +3404,61 @@ a.auth-btn {
   max-height: none !important;
 }
 
+
+/* TRUE IMMERSIVE FULL-PAGE AI MODE */
+.copilot-section.maximized {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 40px 15% !important; /* Wide margins for reading comfort */
+  background: #0d1117 !important;
+  z-index: 99999 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.copilot-section.maximized .chat-history {
+  flex: 1 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  margin-bottom: 24px !important;
+  padding-bottom: 100px !important;
+}
+
+.copilot-section.maximized .assistant-composer {
+  margin-top: auto !important;
+  width: 100% !important;
+  max-width: 800px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* PLAIN TEXT CHAT (Remove Boxes) */
+.chat-bubble, .chat-bubble-raw {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 12px 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.chat-msg-user .chat-bubble {
+  color: #fff !important;
+  text-align: right;
+  font-weight: 500;
+}
+
+.chat-msg-bot .chat-bubble {
+  color: #d1d5db !important;
+  text-align: left;
+}
+
+/* Hide logo/sidebar when maximized if possible via CSS */
+/* We will handle this by making the maximized state fixed with high z-index over everything */
+

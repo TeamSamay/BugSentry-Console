@@ -7,7 +7,7 @@ import { CEODashboard } from './views/CEODashboard';
 import './index.css';
 
 function App() {
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [activeRole, setActiveRole] = useState(null);
   const { user } = useUser(token);
 
@@ -16,6 +16,7 @@ function App() {
     const urlToken = params.get('token');
     if (urlToken) {
       setToken(urlToken);
+      localStorage.setItem('token', urlToken);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
@@ -23,6 +24,7 @@ function App() {
   const handleLogout = () => {
     setToken(null);
     setActiveRole(null);
+    localStorage.removeItem('token');
   };
 
   const isLoggedIn = !!token;
