@@ -190,6 +190,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [showAllRepos, setShowAllRepos] = useState(false);
+  const [isChatMaximized, setIsChatMaximized] = useState(false);
 
   const chatHistoryRef = useRef(null);
   const authHeaders = { Authorization: `Bearer ${token}` };
@@ -398,7 +399,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
         </div>
 
         <div className="dev-topbar-right">
-          <button className="icon-btn" onClick={refetch} title="Sync repositories">
+          <button className="icon-btn" onClick={refetch} title="Sync repositories" style={{ marginRight: '8px' }}>
             <FiRefreshCw className={syncing ? 'spin' : ''} />
           </button>
 
@@ -441,11 +442,11 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
         <aside className="dev-sidebar-left">
           <div className="sidebar-nav-block">
             <ul className="sidebar-list">
-              <li onClick={() => setSelectedRepo(null)} className={!selectedRepo ? 'active' : ''}>
+              <li onClick={() => { setSelectedRepo(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={!selectedRepo ? 'active' : ''}>
                 <FiHome className="sidebar-icon" /><span>Home</span>
               </li>
               <li onClick={() => document.getElementById('risk-findings')?.scrollIntoView({ behavior: 'smooth' })}>
-                <FaBug className="sidebar-icon" /><span>Risk Findings</span>
+                <FiFilter className="sidebar-icon" /><span>Risk Findings</span>
               </li>
               <li onClick={() => document.getElementById('copilot-section')?.scrollIntoView({ behavior: 'smooth' })}>
                 <FiZap className="sidebar-icon" /><span>Assistant</span>
@@ -517,10 +518,18 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
           {!selectedRepo && (
             <>
 
-              <div className="copilot-section integrated" id="copilot-section" style={{ marginTop: '0', marginBottom: '48px' }}>
+              <div className={`copilot-section integrated ${isChatMaximized ? 'maximized' : ''}`} id="copilot-section" style={{ marginTop: '0', marginBottom: '48px' }}>
                 <div className="copilot-header" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <FiZap className="copilot-zap" style={{ color: '#58a6ff' }} />
                   <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>BugSentry Assistant</h3>
+                  <button 
+                    className="assistant-control-btn icon-only" 
+                    onClick={() => setIsChatMaximized(!isChatMaximized)}
+                    style={{ marginLeft: 'auto', border: 'none', background: 'transparent', padding: '4px' }}
+                    title={isChatMaximized ? 'Minimize' : 'Expand View'}
+                  >
+                    {isChatMaximized ? <FiChevronDown size={20} /> : <FiChevronUp size={20} />}
+                  </button>
                 </div>
 
                 {chatHistory.length > 0 && (
