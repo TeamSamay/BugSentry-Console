@@ -3508,3 +3508,116 @@ a.auth-btn {
   padding: 0 !important;
 }
 
+
+/* SIDEBAR EXPANSION & REPO LIST REFINEMENT */
+.dev-sidebar-left {
+  width: 300px !important;
+  min-width: 300px !important;
+}
+
+.dev-main-grid {
+  grid-template-columns: 300px 1fr 320px !important;
+}
+
+.repo-name {
+  font-size: 13px !important; /* Slightly smaller for better fit */
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* SOLUTION MODAL STYLING */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  padding: 40px;
+}
+
+.solution-modal-card {
+  background: #0d1117;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 1000px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+.modal-header {
+  padding: 20px 24px;
+  background: #161b22;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #58a6ff;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.modal-close-btn:hover {
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.solution-description {
+  color: #d1d5db;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  background: #161b22;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-primary {
+  background: #238636;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #8b949e;
+  border: 1px solid #30363d;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+

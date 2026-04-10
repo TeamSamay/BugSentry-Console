@@ -191,6 +191,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
   const [chatLoading, setChatLoading] = useState(false);
   const [showAllRepos, setShowAllRepos] = useState(false);
   const [isChatMaximized, setIsChatMaximized] = useState(false);
+  const [activeSolution, setActiveSolution] = useState(null);
 
   // Computed current chat history
   const chatHistory = selectedRepo ? (repoChats[selectedRepo.repo_id] || []) : (repoChats['home'] || []);
@@ -542,7 +543,13 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
                 {chatHistory.length > 0 && (
                   <div className="chat-history" ref={chatHistoryRef}>
-                    {chatHistory.map((msg, i) => <ChatMessage key={i} msg={msg} />)}
+                    {chatHistory.map((msg, i) => (
+                      <ChatMessage 
+                        key={i} 
+                        msg={msg} 
+                        onViewSolution={(data) => setActiveSolution(data)} 
+                      />
+                    ))}
                     {chatLoading && <TypingIndicator />}
                   </div>
                 )}
@@ -763,7 +770,13 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
               <div className="copilot-section integrated" id="copilot-section">
                 {chatHistory.length > 0 && (
                   <div className="chat-history" ref={chatHistoryRef}>
-                    {chatHistory.map((msg, i) => <ChatMessage key={i} msg={msg} />)}
+                    {chatHistory.map((msg, i) => (
+                      <ChatMessage 
+                        key={i} 
+                        msg={msg} 
+                        onViewSolution={(data) => setActiveSolution(data)} 
+                      />
+                    ))}
                     {chatLoading && <TypingIndicator />}
                   </div>
                 )}
@@ -819,6 +832,35 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
           )}
         </main>
       </div>
+
+      {activeSolution && (
+        <div className="modal-overlay" onClick={() => setActiveSolution(null)}>
+          <div className="solution-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{activeSolution.title}</h2>
+              <button className="modal-close-btn" onClick={() => setActiveSolution(null)}>
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="solution-description">
+                <p>This is a patch-ready remediation suggested by BugSentry AI. Review the implementation below before committing.</p>
+              </div>
+              
+              <div className="markdown-chat">
+                <ChatMessage msg={{ role: 'bot', text: activeSolution.content }} noTitle />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setActiveSolution(null)}>Close</button>
+              <button className="btn-primary" onClick={() => {
+                navigator.clipboard.writeText(activeSolution.content);
+                alert('Solution copied to clipboard!');
+              }}>Copy Solution</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
