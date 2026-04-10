@@ -70,6 +70,96 @@ function buildTreeRows(repoStructure) {
   return rows.slice(0, 55);
 }
 
+function getCopilotWelcome(repo) {
+  if (!repo) {
+    return [
+      'BugSentry Copilot is ready.',
+      '',
+      '- Select a repository from the left panel to unlock deep, file-level AI responses.',
+      '- You can still ask general bug-risk and remediation questions right now.',
+      '- Try: "How should I start a secure scan for my Node project?"',
+    ].join('\n');
+  }
+
+  return [
+    `Connected to ${repo.full_name || repo.name}.`,
+    '',
+    '- Ask for risks, likely failure points, or patch-ready fixes.',
+    '- While scan is running, I can still provide guidance from your question context.',
+    '- Tip: press Enter to send and Shift+Enter for a new line.',
+  ].join('\n');
+}
+
+function getCopilotSuggestionPrompts(repoName) {
+  const target = repoName || 'this repository';
+  return [
+    `Top 5 security risks in ${target}`,
+    `Give me a fix plan with priorities for ${target}`,
+    'Which modules are most likely to fail in production?',
+  ];
+}
+
+function buildLocalCopilotReply({ question, selectedRepo, isRunning, isAnalyzed }) {
+  const q = (question || '').toLowerCase();
+
+  if (!selectedRepo) {
+    return [
+      'Quick guidance before repository selection:',
+      '',
+      '- Pick a repository from the sidebar so I can attach real scan insights.',
+      '- Then run "Run AI Scan" to unlock deep repo-aware responses.',
+      '- Meanwhile, ask me architecture, testing, or security best-practice questions.',
+    ].join('\n');
+  }
+
+  if (isRunning) {
+    return [
+      `Scan is in progress for ${selectedRepo.name}.`,
+      '',
+      '- I will answer with full repository evidence once the scan finishes.',
+      '- Current best action: keep asking targeted questions so we can triage faster.',
+      '- Suggested next prompt: "Show highest risk files and why they are risky."',
+    ].join('\n');
+  }
+
+  if (!isAnalyzed) {
+    return [
+      `Analysis has not completed yet for ${selectedRepo.name}.`,
+      '',
+      '- Click "Run 7 Agents" to generate file-level findings.',
+      '- After completion, ask for patch-ready remediations by file path.',
+      '- I can still provide a generic remediation checklist right now if you want.',
+    ].join('\n');
+  }
+
+  if (q.includes('risk')) {
+    return [
+      `Risk-focused prompt received for ${selectedRepo.name}.`,
+      '',
+      '- Ask for "Top risky files with impact and confidence".',
+      '- Ask for "Likely failure timeline for next 30 days".',
+      '- Ask for "Directory hotspots and reasons".',
+    ].join('\n');
+  }
+
+  if (q.includes('fix') || q.includes('patch') || q.includes('remediation')) {
+    return [
+      'Fix strategy template:',
+      '',
+      '- Step 1: Prioritize high-risk files by exploitability and blast radius.',
+      '- Step 2: Apply smallest safe patch first, then harden input/output boundaries.',
+      '- Step 3: Add regression tests before merge and run full CI validation.',
+    ].join('\n');
+  }
+
+  return [
+    'I can help with that.',
+    '',
+    '- Ask for risk ranking, fix plan, test strategy, or production hardening.',
+    '- For best output, mention a file path, module name, or endpoint.',
+  ].join('\n');
+}
+
 export function DeveloperDashboard({ token, onLogout, onBack }) {
   const AUTO_RUN_ON_REPO_SELECT = true;
   const { user } = useUser(token);
@@ -79,7 +169,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
   const [filterText, setFilterText] = useState('');
   const [analysisStatus, setAnalysisStatus] = useState({});
   const [analysisResults, setAnalysisResults] = useState({});
-  const [chatHistory, setChatHistory] = useState([]);
+  const [chatHistory, setChatHistory] = useState(() => [{ role: 'bot', text: getCopilotWelcome(null) }]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [showAllRepos, setShowAllRepos] = useState(false);
@@ -152,7 +242,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
   const handleRepoSelect = async (repo) => {
     setSelectedRepo(repo);
-    setChatHistory([]);
+    setChatHistory([{ role: 'bot', text: getCopilotWelcome(repo) }]);
 
     let currentStatus = null;
     if (!analysisStatus[repo.repo_id]) {
@@ -183,16 +273,30 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
     }
   };
 
-  const sendChat = async () => {
-    if (!chatInput.trim() || !selectedRepo || chatLoading) return;
-    if (analysisStatus[selectedRepo.repo_id] !== 'completed') return;
-
-    const question = chatInput.trim();
-    setChatInput('');
+  const sendChat = async (presetQuestion = null) => {
+    const question = (typeof presetQuestion === 'string' ? presetQuestion : chatInput).trim();
+    if (!question || chatLoading) return;
+    if (!presetQuestion) setChatInput('');
     setChatHistory((prev) => [...prev, { role: 'user', text: question }]);
     setChatLoading(true);
 
     try {
+      const repoStatus = selectedRepo ? analysisStatus[selectedRepo.repo_id] : null;
+      const isAnalyzedNow = repoStatus === 'completed';
+      const isRunningNow = repoStatus === 'running';
+
+      if (!selectedRepo || !isAnalyzedNow) {
+        await new Promise((resolve) => setTimeout(resolve, 550));
+        const fallbackAnswer = buildLocalCopilotReply({
+          question,
+          selectedRepo,
+          isRunning: isRunningNow,
+          isAnalyzed: isAnalyzedNow,
+        });
+        setChatHistory((prev) => [...prev, { role: 'bot', text: fallbackAnswer }]);
+        return;
+      }
+
       const r = await fetch(`${SYSTEM_URL}/api/analysis/copilot/${selectedRepo.repo_id}`, {
         method: 'POST',
         headers: { ...authHeaders, 'Content-Type': 'application/json' },
@@ -231,7 +335,9 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
   const selectedStatus = selectedRepo ? analysisStatus[selectedRepo.repo_id] : null;
   const isAnalyzed = selectedStatus === 'completed';
   const isRunning = selectedStatus === 'running';
+  const hasLiveCopilot = Boolean(selectedRepo && isAnalyzed);
   const currentResult = selectedRepo ? analysisResults[selectedRepo.repo_id] : null;
+  const suggestionPrompts = getCopilotSuggestionPrompts(selectedRepo?.name);
   const insight = currentResult?.structured_insights || buildFallbackInsights(currentResult);
   const deepReport = currentResult?.deep_scan_report || {};
   const repoStructure = currentResult?.repo_context?.repo_structure || {};
@@ -263,14 +369,16 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
       <header className="dev-topbar">
         <div className="dev-topbar-left">
-          <img src="/logo.png" alt="Bugsentry Logo" className="dev-logo" />
-          <span className="dev-topbar-title">{selectedRepo ? selectedRepo.full_name : 'Dashboard'}</span>
+          <img src="/logo.png" alt="Bugsentry Logo" className="dev-logo" onClick={() => setSelectedRepo(null)} style={{ cursor: 'pointer' }} />
+          {selectedRepo && <span className="dev-topbar-title" style={{ marginLeft: '12px', color: 'rgba(255,255,255,0.4)' }}>/</span>}
+          {selectedRepo && <span className="dev-topbar-title">{selectedRepo.full_name}</span>}
         </div>
 
         <div className="dev-topbar-right">
-          <button className="icon-btn" onClick={onBack} title="Switch Role">
-            <FaBriefcase style={{ fontSize: '14px' }} />
+          <button className="dev-topbar-title-btn" onClick={() => setSelectedRepo(null)}>
+            Dashboard
           </button>
+          
           <button className="icon-btn" onClick={refetch} title="Sync repositories">
             <FiRefreshCw className={syncing ? 'spin' : ''} />
           </button>
@@ -310,30 +418,17 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
       <div className="dev-main-grid">
         <aside className="dev-sidebar-left">
           <div className="sidebar-nav-block">
-            <h4 className="sidebar-subhead">Dashboard Navigation</h4>
             <ul className="sidebar-list">
-              <li><FaShieldAlt className="sidebar-icon" /><span>Overview</span></li>
-              <li><FaBug className="sidebar-icon" /><span>Risk Findings</span></li>
-              <li><FiZap className="sidebar-icon" /><span>Copilot</span></li>
+              <li onClick={() => setSelectedRepo(null)} className={!selectedRepo ? 'active' : ''}>
+                <FaShieldAlt className="sidebar-icon" /><span>Overview</span>
+              </li>
+              <li onClick={() => document.getElementById('risk-findings')?.scrollIntoView({ behavior: 'smooth' })}>
+                <FaBug className="sidebar-icon" /><span>Risk Findings</span>
+              </li>
+              <li onClick={() => document.getElementById('copilot-section')?.scrollIntoView({ behavior: 'smooth' })}>
+                <FiZap className="sidebar-icon" /><span>Copilot</span>
+              </li>
             </ul>
-            <hr className="sidebar-divider" />
-          </div>
-
-          <div className="dev-sidebar-user-fix">
-             {user?.picture ? (
-               <img src={user.picture} alt="avatar" className="dev-user-avatar-img small" />
-             ) : (
-               <div className="dev-user-avatar small" />
-             )}
-             <div className="user-details">
-                <span className="user-name">{user?.name || user?.email || 'Developer'}</span>
-                <span className="user-role">Full Access</span>
-             </div>
-          </div>
-
-          <div className="dev-section-header">
-            <h4>Your repositories</h4>
-            {syncing && <span className="sync-label">Syncing...</span>}
           </div>
 
           <input
@@ -342,6 +437,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
             placeholder="Find a repository..."
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
+            style={{ marginTop: '16px' }}
           />
 
           <div className="expanded-sidebar-content">
@@ -395,15 +491,55 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
           {!selectedRepo && (
             <>
               <h2 className="feed-title">Home</h2>
-              <div className="dev-ai-box chatbot-disabled">
-                <textarea placeholder="Select a repository from the sidebar to start analysis and chat with BugSentry Copilot" disabled />
-                <div className="ai-box-toolbar">
-                  <div className="toolbar-left">
-                    <button className="btn-outline" disabled><FiMessageSquare /> Ask</button>
-                  </div>
-                  <div className="toolbar-right">
-                    <span className="ai-model-selector">BugSentry Copilot</span>
-                    <button className="btn-send" disabled><FiSend /></button>
+              <div className="copilot-section">
+                <div className="copilot-header">
+                  <FiZap className="copilot-zap" />
+                  <h3>BugSentry Copilot</h3>
+                  <span className="copilot-lock-hint">General mode active</span>
+                </div>
+
+                <div className="chat-history">
+                  {chatHistory.map((msg, i) => <ChatMessage key={i} msg={msg} />)}
+                  {chatLoading && <TypingIndicator />}
+                  <div ref={chatEndRef} />
+                </div>
+
+                <div className="copilot-suggestions">
+                  {suggestionPrompts.map((prompt) => (
+                    <button key={prompt} className="copilot-suggestion-chip" onClick={() => sendChat(prompt)}>
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="dev-ai-box copilot-input-box">
+                  <textarea
+                    placeholder="Ask BugSentry Copilot about security, quality, architecture, or testing strategy..."
+                    disabled={chatLoading}
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendChat();
+                      }
+                    }}
+                    rows={3}
+                  />
+                  <div className="ai-box-toolbar">
+                    <div className="toolbar-left">
+                      <span className="ai-model-selector">BugSentry Copilot - General Assistant</span>
+                    </div>
+                    <div className="toolbar-right">
+                      {chatHistory.length > 0 && (
+                        <button className="btn-outline small" onClick={() => setChatHistory([{ role: 'bot', text: getCopilotWelcome(null) }])} title="Clear chat">
+                          <FiX /> Clear
+                        </button>
+                      )}
+                      <button className="btn-send" onClick={() => sendChat()} disabled={chatLoading || !chatInput.trim()} title="Send message (Enter)">
+                        <FiSend />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -524,7 +660,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                     </div>
                   </div>
 
-                  <div className="summary-card">
+                  <div className="summary-card" id="risk-findings">
                     <div className="card-header"><FaBug className="header-icon" /><h3>Where Bugs Can Appear (ETA + Impact)</h3></div>
                     <div className="timeline-list">
                       {probableFailures.length === 0 && <p className="mini-note">No structured failure timeline available yet. Re-run scan or ask Copilot for file-level bugs.</p>}
@@ -580,33 +716,40 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                 </div>
               )}
 
-              <div className={`copilot-section ${(!isAnalyzed && !isRunning) ? 'copilot-locked' : ''}`}>
+              <div className="copilot-section">
                 <div className="copilot-header">
                   <FiZap className="copilot-zap" />
                   <h3>BugSentry Copilot</h3>
-                  {!isAnalyzed && (
-                    <span className="copilot-lock-hint">{isRunning ? 'Available after scan completes' : 'Run analysis first to enable chat'}</span>
+                  {!hasLiveCopilot && (
+                    <span className="copilot-lock-hint">{isRunning ? 'Scan running: guided mode active' : 'Guided mode active: run scan for live repo AI'}</span>
                   )}
+                  {hasLiveCopilot && <span className="copilot-lock-hint">Live repository intelligence enabled</span>}
                 </div>
 
-                {chatHistory.length > 0 && (
-                  <div className="chat-history">
-                    {chatHistory.map((msg, i) => <ChatMessage key={i} msg={msg} />)}
-                    {chatLoading && <TypingIndicator />}
-                    <div ref={chatEndRef} />
-                  </div>
-                )}
+                <div className="chat-history">
+                  {chatHistory.map((msg, i) => <ChatMessage key={i} msg={msg} />)}
+                  {chatLoading && <TypingIndicator />}
+                  <div ref={chatEndRef} />
+                </div>
 
-                <div className={`dev-ai-box copilot-input-box ${!isAnalyzed ? 'chatbot-disabled' : ''}`}>
+                <div className="copilot-suggestions">
+                  {suggestionPrompts.map((prompt) => (
+                    <button key={prompt} className="copilot-suggestion-chip" onClick={() => sendChat(prompt)}>
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="dev-ai-box copilot-input-box">
                   <textarea
                     placeholder={
-                      isAnalyzed
+                      hasLiveCopilot
                         ? `Ask about ${selectedRepo.name} e.g. What are the main security risks?`
                         : isRunning
-                          ? 'Waiting for scan to complete...'
-                          : 'Run analysis first to enable BugSentry Copilot...'
+                          ? 'Scan is running. Ask now for guided recommendations while results are being prepared...'
+                          : 'Ask now for guided recommendations. Run scan to unlock deep file-level responses...'
                     }
-                    disabled={!isAnalyzed || chatLoading}
+                    disabled={chatLoading}
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -619,15 +762,15 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                   />
                   <div className="ai-box-toolbar">
                     <div className="toolbar-left">
-                      <span className="ai-model-selector">BugSentry Copilot - {selectedRepo.name}</span>
+                      <span className="ai-model-selector">{hasLiveCopilot ? `BugSentry Copilot - ${selectedRepo.name}` : `BugSentry Copilot - Guided Mode for ${selectedRepo.name}`}</span>
                     </div>
                     <div className="toolbar-right">
                       {chatHistory.length > 0 && (
-                        <button className="btn-outline small" onClick={() => setChatHistory([])} title="Clear chat">
+                        <button className="btn-outline small" onClick={() => setChatHistory([{ role: 'bot', text: getCopilotWelcome(selectedRepo) }])} title="Clear chat">
                           <FiX /> Clear
                         </button>
                       )}
-                      <button className="btn-send" onClick={sendChat} disabled={!isAnalyzed || chatLoading || !chatInput.trim()} title="Send message (Enter)">
+                      <button className="btn-send" onClick={() => sendChat()} disabled={chatLoading || !chatInput.trim()} title="Send message (Enter)">
                         <FiSend />
                       </button>
                     </div>

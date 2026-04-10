@@ -3,7 +3,7 @@ import { useUser } from './hooks/useUser';
 import { LoginView } from './views/LoginView';
 import { RoleSelectionView } from './views/RoleSelectionView';
 import { DeveloperDashboard } from './views/DeveloperDashboard';
-import { WorkspaceView } from './views/WorkspaceView';
+import { CEODashboard } from './views/CEODashboard';
 import './index.css';
 
 function App() {
@@ -32,6 +32,19 @@ function App() {
 
   const isLoggedIn = !!token;
 
+  const isCEORoute = window.location.pathname === '/ceo';
+
+  if (isCEORoute) {
+    return (
+      <CEODashboard
+        token={null}
+        role="ceo"
+        onLogout={() => window.location.href = '/'}
+        onBack={() => window.location.href = '/'}
+      />
+    );
+  }
+
   return (
     <>
       {!isLoggedIn ? (
@@ -49,7 +62,8 @@ function App() {
           onBack={() => setActiveRole(null)}
         />
       ) : (
-        <WorkspaceView
+        <CEODashboard
+          token={token}
           role={activeRole}
           onLogout={handleLogout}
           onBack={() => setActiveRole(null)}
