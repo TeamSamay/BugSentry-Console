@@ -7,11 +7,8 @@ import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 export function TypingIndicator() {
   return (
     <div className="chat-msg chat-msg-bot">
-      <div className="chat-bot-avatar">
-        <FiZap size={10} />
-      </div>
       <div className="chat-typing">
-        <span /><span /><span />
+        <span /> <span /> <span />
       </div>
     </div>
   );
@@ -70,25 +67,18 @@ export function ChatMessage({ msg, onViewSolution, noTitle }) {
 
   if (prMatch) return (
     <div className={`chat-msg ${isBot ? 'chat-msg-bot' : 'chat-msg-user'}`}>
-      {isBot && <div className="chat-bot-avatar"><FiZap size={10} /></div>}
       <div className="chat-bubble-raw">{renderCard(prMatch[1].trim(), 'PR')}</div>
     </div>
   );
 
   if (issueMatch) return (
     <div className={`chat-msg ${isBot ? 'chat-msg-bot' : 'chat-msg-user'}`}>
-      {isBot && <div className="chat-bot-avatar"><FiZap size={10} /></div>}
       <div className="chat-bubble-raw">{renderCard(issueMatch[1].trim(), 'ISSUE')}</div>
     </div>
   );
 
   return (
     <div className={`chat-msg ${isBot ? 'chat-msg-bot' : 'chat-msg-user'}`}>
-      {isBot && (
-        <div className="chat-bot-avatar">
-          <FiZap size={10} />
-        </div>
-      )}
       <div className="chat-bubble markdown-chat">
         {isBot && !noTitle && <h2 className="chat-h2" style={{ marginTop: 0 }}>BugSentry Report</h2>}
         <ReactMarkdown

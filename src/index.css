@@ -3810,3 +3810,228 @@ a.auth-btn {
   gap: 0 !important;
 }
 
+
+/* SLEEK CHAT BUBBLES - PROFESSIONAL FINISH */
+
+.chat-msg {
+  display: flex !important;
+  width: 100% !important;
+  margin-bottom: 24px !important;
+}
+
+.chat-msg-user {
+  justify-content: flex-end !important; /* Right aligned user messages */
+}
+
+.chat-msg-user .chat-bubble {
+  width: fit-content !important; /* Only as wide as your text */
+  max-width: 80% !important;
+  background: rgba(88, 166, 255, 0.1) !important; /* Glass Blue */
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(88, 166, 255, 0.2) !important;
+  border-radius: 18px 18px 4px 18px !important; /* Modern chat bubble shape */
+  padding: 12px 20px !important;
+}
+
+.chat-msg-bot {
+  justify-content: flex-start !important;
+  gap: 12px !important;
+}
+
+.chat-msg-bot .chat-bubble.markdown-chat {
+  width: 100% !important;
+  max-width: 95% !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 4px 18px 18px 18px !important;
+  padding: 32px 40px !important; /* Extra breathing room for security reports */
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2) !important;
+}
+
+.chat-h2 {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  color: #58a6ff !important;
+  margin-bottom: 16px !important;
+}
+
+.chat-bot-avatar {
+  background: #238636 !important; /* Green for bot presence */
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-top: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+
+/* HIGH FIDELITY SOLUTION MODAL - RESTORED */
+.solution-modal-page {
+  background: #0d1117 !important;
+  width: 90vw;
+  max-width: 1200px;
+  max-height: 90vh;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  animation: modalIn 0.3s ease-out;
+}
+
+.modal-top-bar {
+  padding: 24px 32px;
+  background: linear-gradient(to right, #161b22, #0d1117);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.modal-top-bar h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: #c9d1d9;
+}
+
+.risk-level-badge {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.risk-level-badge.critical {
+  background: rgba(248, 81, 73, 0.1);
+  color: #f85149;
+  border: 1px solid rgba(248, 81, 73, 0.2);
+}
+
+.modal-content-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  overflow: hidden;
+}
+
+.modal-sidebar-info {
+  background: #161b22;
+  padding: 32px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-block {
+  margin-bottom: 24px;
+}
+
+.info-block label {
+  display: block;
+  font-size: 11px;
+  color: #8b949e;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.info-block span {
+  display: block;
+  font-size: 14px;
+  color: #f0f6fc;
+  font-weight: 500;
+}
+
+.modal-main-remedy {
+  padding: 32px 48px;
+  overflow-y: auto;
+  background: #0d1117;
+}
+
+.remedy-section {
+  margin-bottom: 40px;
+}
+
+.remedy-section h3 {
+  font-size: 14px;
+  color: #58a6ff;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.solution-editor-view {
+  background: #010409 !important;
+  border-radius: 8px !important;
+  border: 1px solid #30363d !important;
+  padding: 0 !important;
+}
+
+.modal-bottom-actions {
+  padding: 20px 32px;
+  background: #161b22;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.btn-modal-primary {
+  background: #238636 !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+.btn-modal-secondary {
+  background: transparent !important;
+  color: #8b949e !important;
+  border: 1px solid #30363d !important;
+}
+
+
+/* USER INPUT ALIGNMENT - RIGHT WEIGHTED */
+.copilot-input-box.assistant-composer {
+  margin-left: auto !important;
+  margin-right: 0 !important;
+  width: 90% !important; /* Slightly narrower and right-aligned */
+  border: 1px solid rgba(88, 166, 255, 0.1) !important;
+  transition: all 0.2s ease !important;
+}
+
+.copilot-input-box.assistant-composer:focus-within {
+  border-color: rgba(88, 166, 255, 0.4) !important;
+  box-shadow: 0 0 15px rgba(88, 166, 255, 0.1) !important;
+}
+
+
+/* RE-CENTERING COMPOSER - MINIMALIST FLOW */
+
+.copilot-input-box.assistant-composer {
+  margin: 0 auto !important; /* BACK TO CENTER */
+  width: 100% !important;
+  max-width: 100% !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Ensure messages still have their hierarchy */
+.chat-msg-user {
+  justify-content: flex-end !important;
+}
+
+.chat-msg-bot {
+  justify-content: flex-start !important;
+}
+
+/* Since the header is gone, we need a small top margin for the history */
+.chat-history {
+  margin-top: 24px !important;
+}
+

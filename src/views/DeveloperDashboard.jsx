@@ -117,25 +117,21 @@ function formatAssistantReport(answer, question, selectedRepo) {
 }
 
 function buildLocalCopilotReply({ question, selectedRepo, isRunning, isAnalyzed }) {
-  const q = (question || '').toLowerCase();
-
   if (!selectedRepo) {
     return [
-      'Quick guidance before repository selection:',
+      'Security guidance before repository selection:',
       '',
-      '- Pick a repository from the sidebar so I can attach real scan insights.',
-      '- Then run "Run AI Scan" to unlock deep repo-aware responses.',
-      '- Meanwhile, ask me architecture, testing, or security best-practice questions.',
+      'Greetings. To provide specific remediation for your codebase, please select a repository from the sidebar.',
+      '',
+      'How can I assist your security workflow today?',
     ].join('\n');
   }
 
   if (isRunning) {
     return [
-      `Scan is in progress for ${selectedRepo?.name}.`,
+      `Analysis in progress for **${selectedRepo.name}**.`,
       '',
-      '- I will answer with full repository evidence once the scan finishes.',
-      '- Current best action: keep asking targeted questions so we can triage faster.',
-      '- Suggested next prompt: "Show highest risk files and why they are risky."',
+      'I am currently processing your repository through our 7 AI security agents. I will be ready to discuss specific findings in approximately 30-60 seconds.',
     ].join('\n');
   }
 
@@ -307,7 +303,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
     const question = (typeof presetQuestion === 'string' ? presetQuestion : chatInput).trim();
     if (!question || chatLoading) return;
     if (!presetQuestion) setChatInput('');
-    
+
     const userMsg = { role: 'user', text: question };
     const historyWithUser = [...currentHist, userMsg];
     setRepoChats(prev => ({ ...prev, [targetKey]: historyWithUser }));
@@ -337,7 +333,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data?.detail || `Assistant failed with status ${r.status}`);
-      
+
       const answer = formatAssistantReport(data.answer || 'No response from AI.', question, selectedRepo);
       setRepoChats(prev => ({ ...prev, [targetKey]: [...historyWithUser, { role: 'bot', text: answer }] }));
     } catch (err) {
@@ -527,17 +523,17 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
               <div className="copilot-section integrated" id="copilot-section" style={{ marginTop: '0', marginBottom: '48px' }}>
                 <div className="copilot-header" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FiZap className="copilot-zap" style={{ color: '#58a6ff' }} />
-                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>BugSentry Assistant</h3>
+                  {/* <FiZap className="copilot-zap" style={{ color: '#58a6ff' }} /> */}
+                  {/* <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>BugSentry Assistant</h3> */}
                 </div>
 
                 {chatHistory.length > 0 && (
                   <div className="chat-history" ref={chatHistoryRef}>
                     {chatHistory.map((msg, i) => (
-                      <ChatMessage 
-                        key={i} 
-                        msg={msg} 
-                        onViewSolution={(data) => setActiveSolution(data)} 
+                      <ChatMessage
+                        key={i}
+                        msg={msg}
+                        onViewSolution={(data) => setActiveSolution(data)}
                       />
                     ))}
                     {chatLoading && <TypingIndicator />}
@@ -761,10 +757,10 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                 {chatHistory.length > 0 && (
                   <div className="chat-history" ref={chatHistoryRef}>
                     {chatHistory.map((msg, i) => (
-                      <ChatMessage 
-                        key={i} 
-                        msg={msg} 
-                        onViewSolution={(data) => setActiveSolution(data)} 
+                      <ChatMessage
+                        key={i}
+                        msg={msg}
+                        onViewSolution={(data) => setActiveSolution(data)}
                       />
                     ))}
                     {chatLoading && <TypingIndicator />}
@@ -825,28 +821,54 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
       {activeSolution && (
         <div className="modal-overlay" onClick={() => setActiveSolution(null)}>
-          <div className="solution-modal-card" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{activeSolution.title}</h2>
-              <button className="modal-close-btn" onClick={() => setActiveSolution(null)}>
-                <FiX size={20} />
+          <div className="solution-modal-page" onClick={e => e.stopPropagation()}>
+            <div className="modal-top-bar">
+              <div className="risk-level-badge critical">High Severity</div>
+              <h2>Security Remediation Detail</h2>
+              <button className="modal-close-icon" onClick={() => setActiveSolution(null)}>
+                <FiX size={22} />
               </button>
             </div>
-            <div className="modal-body">
-              <div className="solution-description">
-                <p>This is a patch-ready remediation suggested by BugSentry AI. Review the implementation below before committing.</p>
+
+            <div className="modal-content-grid">
+              <div className="modal-sidebar-info">
+                <div className="info-block">
+                  <label>Finding</label>
+                  <span>{activeSolution.title}</span>
+                </div>
+                <div className="info-block">
+                  <label>Status</label>
+                  <span className="status-open">Needs Patch</span>
+                </div>
+                <div className="info-block">
+                  <label>Remediation Type</label>
+                  <span>Code Fix • PR Ready</span>
+                </div>
               </div>
-              
-              <div className="markdown-chat">
-                <ChatMessage msg={{ role: 'bot', text: activeSolution.content }} noTitle />
+
+              <div className="modal-main-remedy">
+                <div className="remedy-section">
+                  <h3>Problem Context</h3>
+                  <p>BugSentry has identified a security vulnerability in the selected repository. The analysis suggests immediate developer action to mitigate potential exploitation.</p>
+                </div>
+
+                <div className="remedy-section">
+                  <h3>Proposed Remediation Patch</h3>
+                  <div className="markdown-chat solution-editor-view">
+                    <ChatMessage msg={{ role: 'bot', text: activeSolution.content }} noTitle />
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setActiveSolution(null)}>Close</button>
-              <button className="btn-primary" onClick={() => {
+
+            <div className="modal-bottom-actions">
+              <button className="btn-modal-secondary" onClick={() => setActiveSolution(null)}>Cancel</button>
+              <button className="btn-modal-primary" onClick={() => {
                 navigator.clipboard.writeText(activeSolution.content);
                 alert('Solution copied to clipboard!');
-              }}>Copy Solution</button>
+              }}>
+                <FiCopy /> Copy Full Patch
+              </button>
             </div>
           </div>
         </div>
