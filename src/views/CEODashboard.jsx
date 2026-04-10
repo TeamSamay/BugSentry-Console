@@ -10,7 +10,6 @@ import {
 import { useUser } from '../hooks/useUser';
 import { useRepos } from '../hooks/useRepos';
 import { ChatMessage, TypingIndicator } from '../components/ChatComponents';
-import { GitHubContributionChart } from '../components/Charts';
 import { SYSTEM_URL } from '../utils/constants';
 
 // ---- DUMMY DATA GENERATION ---- //
@@ -253,8 +252,6 @@ export function CEODashboard({ token, onLogout, onBack }) {
                     </div>
                   </div>
                 </div>
-
-                <GitHubContributionChart username={user?.login || user?.github_username || user?.name} />
               </>
             )}
 

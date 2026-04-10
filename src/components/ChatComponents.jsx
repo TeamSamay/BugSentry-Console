@@ -17,7 +17,7 @@ export function TypingIndicator() {
   );
 }
 
-export function ChatMessage({ msg }) {
+export function ChatMessage({ msg, onViewSolution, noTitle }) {
   const [copied, setCopied] = React.useState(false);
 
   const handleCopyCode = (code) => {
@@ -29,31 +29,31 @@ export function ChatMessage({ msg }) {
   const renderCard = (content, type) => {
     if (type === 'PR') {
       const lines = content.split('\n').filter(l => l.trim());
-      const title = lines[0]?.replace(/^Title: /, '') || 'Fix Security Vulnerabilities';
-      const points = lines.slice(1);
+      const title = lines[0]?.replace(/^Title: /, '') || 'Proposed Remediation Plan';
+      const points = lines.slice(1, 4); 
       return (
         <div className="ai-ui-card pr-card">
-          <div className="card-tag">PULL REQUEST DRAFT</div>
-          <h4 className="card-title-md">{title}</h4>
+          <div className="card-tag">BugSentry Analysis • Solution</div>
+          <h2 className="card-title-md">{title}</h2>
           <ul className="card-list-md">{points.map((p, i) => <li key={i}>{p.replace(/^[-*]\s*/, '')}</li>)}</ul>
-          <button className="btn-card-action" onClick={() => handleCopyCode(content)}>
-            {copied ? <><FiCheck /> Copied</> : <><FiCopy /> Copy PR Description</>}
+          <button className="btn-card-action" onClick={() => onViewSolution({ title, content })}>
+            <FiZap /> View Detailed Solution
           </button>
         </div>
       );
     }
     if (type === 'ISSUE') {
       const lines = content.split('\n').filter(l => l.trim());
-      const title = lines[0]?.replace(/^Title: /, '') || 'New Security Finding';
-      const severity = lines[1]?.replace(/^Severity: /, '') || 'Medium';
-      const desc = lines.slice(2).join(' ');
+      const title = lines[0]?.replace(/^Title: /, '') || 'Security Finding Details';
+      const severity = lines[1]?.replace(/^Severity: /, '') || 'Critical';
+      const desc = lines.slice(2, 4).join(' '); 
       return (
         <div className="ai-ui-card issue-card">
-          <div className="card-tag severity-high">{severity.toUpperCase()} ISSUE</div>
-          <h4 className="card-title-md">{title}</h4>
-          <p className="card-desc-md">{desc}</p>
+          <div className="card-tag">{severity.toUpperCase()} PRIORITY ALERT</div>
+          <h2 className="card-title-md">{title}</h2>
+          <p className="card-desc-md">{desc}...</p>
           <div className="card-actions">
-            <button className="btn-card-action primary">Create GitHub Issue</button>
+            <button className="btn-card-action primary" onClick={() => onViewSolution({ title, content })}>See Action Plan</button>
             <button className="btn-card-action">Ignore</button>
           </div>
         </div>
@@ -65,7 +65,6 @@ export function ChatMessage({ msg }) {
   const isBot = msg.role === 'bot';
   const text = msg.text || '';
 
-  // Check for specialized cards
   const prMatch = text.match(/\[PR_CARD\]([\s\S]*?)\[\/PR_CARD\]/);
   const issueMatch = text.match(/\[ISSUE_CARD\]([\s\S]*?)\[\/ISSUE_CARD\]/);
 
@@ -91,6 +90,7 @@ export function ChatMessage({ msg }) {
         </div>
       )}
       <div className="chat-bubble markdown-chat">
+        {isBot && !noTitle && <h2 className="chat-h2" style={{ marginTop: 0 }}>BugSentry Report</h2>}
         <ReactMarkdown
           components={{
             code({ node, inline, className, children, ...props }) {
