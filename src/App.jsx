@@ -32,13 +32,18 @@ function App() {
   const isCEORoute = window.location.pathname === '/ceo';
   const isDevRoute = window.location.pathname === '/developer' || window.location.pathname === '/dashboard';
 
+  // Auth Guard
+  if ((isCEORoute || isDevRoute) && !isLoggedIn) {
+    return <LoginView />;
+  }
+
   if (isCEORoute) {
     return (
       <CEODashboard
         token={token}
         role="ceo"
-        onLogout={token ? handleLogout : () => window.location.href = '/'}
-        onBack={token ? () => setActiveRole(null) : () => window.location.href = '/'}
+        onLogout={handleLogout}
+        onBack={() => window.location.href = '/'}
       />
     );
   }
@@ -47,8 +52,8 @@ function App() {
     return (
       <DeveloperDashboard
         token={token}
-        onLogout={token ? handleLogout : () => window.location.href = '/'}
-        onBack={token ? () => setActiveRole(null) : () => window.location.href = '/'}
+        onLogout={handleLogout}
+        onBack={() => window.location.href = '/'}
       />
     );
   }

@@ -580,6 +580,7 @@ body {
   background: rgba(255,255,255,0.1);
 }
 
+.dev-main-grid {
   display: grid;
   grid-template-columns: 280px 1fr;
   flex: 1;
@@ -589,6 +590,7 @@ body {
 }
 
 /* Sidebar Left */
+.dev-sidebar-left {
   padding: 24px;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   overflow-y: auto;
@@ -1087,8 +1089,7 @@ body {
     flex-direction: column;
     overflow-y: auto;
   }
-}
-  
+
   .dev-topbar {
     flex-wrap: wrap;
     gap: 12px;
@@ -1098,6 +1099,7 @@ body {
     width: 100%;
   }
 
+  .dev-sidebar-left {
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
@@ -2289,6 +2291,7 @@ a.auth-btn {
 /* CEO DASHBOARD DETAILED VERSION           */
 /* ========================================= */
 
+.ceo-sidebar {
   background: rgba(13, 14, 18, 0.5);
   backdrop-filter: blur(10px);
 }
@@ -3507,10 +3510,12 @@ a.auth-btn {
 
 
 /* SIDEBAR EXPANSION & REPO LIST REFINEMENT */
+.dev-sidebar-left {
   width: 300px !important;
   min-width: 300px !important;
 }
 
+.dev-main-grid {
   grid-template-columns: 300px 1fr 320px !important;
 }
 
@@ -5656,4 +5661,3 @@ a.auth-btn {
   50% { transform: scale(1.2); opacity: 1; }
   100% { transform: scale(0.8); opacity: 0.5; }
 }
-\

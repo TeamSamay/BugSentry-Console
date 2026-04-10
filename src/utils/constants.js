@@ -1,6 +1,6 @@
 /* ── Service URLs ──────────────────────────────────────────────────────────── */
-export const AUTH_URL   = 'https://bugsentry-auth.onrender.com';
-export const SYSTEM_URL = 'https://bugsentry-system.onrender.com';
+export const AUTH_URL   = import.meta.env.VITE_AUTH_URL   || 'https://bugsentry-auth.onrender.com';
+export const SYSTEM_URL = import.meta.env.VITE_SYSTEM_URL || 'https://bugsentry-system.onrender.com';
 
 /* ── Language Color Map ────────────────────────────────────────────────────── */
 export const LANG_COLORS = {
