@@ -207,7 +207,20 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
   const [showAllRepos, setShowAllRepos] = useState(false);
   const [isChatMaximized, setIsChatMaximized] = useState(false);
   const [activeSolution, setActiveSolution] = useState(null);
+  const [evolutionData, setEvolutionData] = useState(null);
   const [remediationLoading, setRemediationLoading] = useState(false);
+
+  const fetchEvolution = async (rid) => {
+    try {
+      const res = await fetch(`${SYSTEM_URL}/api/report/evolution/${rid}`, {
+        headers: authHeaders
+      });
+      const data = await res.json();
+      setEvolutionData(data);
+    } catch (err) {
+      console.error('Evolution fetch failed:', err);
+    }
+  };
 
   const fetchRemediation = async (item, type = 'file') => {
     if (!selectedRepo) return;
@@ -247,14 +260,14 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
       setRemediationLoading(false);
     }
   };
-
   const [expandedSections, setExpandedSections] = useState({
     brief: true,
     riskyFiles: false,
     bugs: false,
     hotspots: false,
     solution: false,
-    directory: false
+    directory: false,
+    evolution: true,
   });
 
   const toggleSection = (section) => {
@@ -338,6 +351,9 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
   const handleRepoSelect = async (repo) => {
     setSelectedRepo(repo);
+    if (repo?.repo_id) {
+      fetchEvolution(repo.repo_id);
+    }
     // Implicit switch via chatHistory computed ref.
 
     let currentStatus = null;
@@ -921,6 +937,58 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                       </div>
                     )}
                   </div>
+
+                  {evolutionData && !evolutionData.error && (
+                    <div className="summary-card collapsible-card">
+                      <div className="card-header collapsible-premium" onClick={() => toggleSection('evolution')}>
+                        <div className="header-left">
+                          <div className="header-icon-wrapper brief-icon"><FiGitBranch /></div>
+                          <h3>Architecture Evolution & Version Drift</h3>
+                        </div>
+                        <div className="header-right">
+                          <span className="count-badge">{evolutionData.current_version}</span>
+                          {expandedSections.evolution ? <FiChevronUp className="chevron-icon" /> : <FiChevronDown className="chevron-icon" />}
+                        </div>
+                      </div>
+                      {expandedSections.evolution && (
+                        <div className="card-body animate-slide-down">
+                          <div className="evolution-summary-stats">
+                            <div className="evo-stat">
+                              <label>Migration Readiness</label>
+                              <div className="evo-progress-bg">
+                                <div className="evo-progress-fill" style={{ width: evolutionData.migration_readiness }} />
+                              </div>
+                              <span>{evolutionData.migration_readiness}</span>
+                            </div>
+                            <div className="evo-stat">
+                              <label>Version Gap</label>
+                              <span>{evolutionData.previous_version} → {evolutionData.current_version}</span>
+                            </div>
+                          </div>
+
+                          <div className="evolution-points-grid">
+                            {(evolutionData.evolution_points || []).map((p, i) => (
+                              <div key={i} className="evolution-point-card">
+                                <div className={`evo-type-tag ${p.type.toLowerCase()}`}>{p.type}</div>
+                                <h4>{p.feature}</h4>
+                                <p>{p.description}</p>
+                                <div className="evo-impact">Impact: <strong>{p.impact}</strong></div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="future-roadmap-box">
+                            <h4><FiZap /> AI-Predicted Engineering Roadmap</h4>
+                            <ul>
+                              {(evolutionData.future_roadmap || []).map((step, i) => (
+                                <li key={i}>{step}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="summary-card directory-overview-card collapsible-card">
                     <div className="card-header collapsible-premium" onClick={() => toggleSection('directory')}>
