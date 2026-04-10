@@ -3678,3 +3678,62 @@ a.auth-btn {
   max-width: 180px;
 }
 
+
+/* FINAL REFINEMENT - NO GAPS, PERFECT ALIGNMENT */
+.dev-main-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr !important; /* Removed the 3rd column gap */
+  width: 100vw;
+  max-width: 100%;
+}
+
+.dev-sidebar-left {
+  width: 300px !important;
+  min-width: 300px !important;
+  padding: 24px 16px !important;
+}
+
+.expanded-sidebar-content {
+  padding: 0 !important;
+  margin: 16px 0 !important;
+}
+
+.repo-list-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important; /* Force left align */
+  gap: 8px !important; /* Tight, professional spacing */
+  padding: 10px 12px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: 100% !important;
+}
+
+.status-dot {
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+}
+
+.repo-name {
+  flex: 1 !important;
+  font-size: 13px !important;
+  margin-left: 0 !important; /* Remove any ghost margins */
+  text-align: left !important;
+}
+
+/* Ensure central feed expands to fill the screen */
+.dev-center-feed {
+  flex: 1 !important;
+  width: 100% !important;
+  max-width: none !important;
+  padding: 24px 40px !important;
+}
+
+/* Assistant Width cleanup */
+.copilot-section.integrated {
+  width: 100% !important;
+  max-width: 900px !important; /* Keep as centered container for reading comfort */
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
