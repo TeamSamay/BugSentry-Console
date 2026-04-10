@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { FaGithub, FaGitlab, FaGoogle, FaCode, FaBriefcase, FaRegSmile, FaDocker } from 'react-icons/fa';
 import { 
   FiMenu, FiSearch, FiBell, FiPlus, FiInbox, 
   FiMessageSquare, FiGitBranch, FiFileText, FiGitCommit, FiFilter, FiMoreHorizontal, FiTerminal,
-  FiCpu, FiAlertCircle, FiStar, FiChevronDown, FiBookOpen
+  FiCpu, FiAlertCircle, FiStar, FiChevronDown, FiBookOpen, FiPlay,
+  FiUpload, FiUsers, FiCode
 } from 'react-icons/fi';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import './index.css';
@@ -267,7 +269,264 @@ function RepositoryRiskChart() {
   );
 }
 
-function DeveloperDashboard({ onLogout, onBack }) {
+const DEV_REPOS = [
+  { id: 'healthone', name: 'Samay-Al-Verse/HealthOne', status: 'green', errorCount: 0, desc: 'HealthOne application backend routing' },
+  { id: 'dsa', name: 'Samay-Al-Verse/DSA', status: 'orange', errorCount: 1, desc: 'Data Structures analysis and tests' },
+  { id: 'pharmastic-bot', name: 'Samay-Al-Verse/Pharmastic-Bot', status: 'red', errorCount: 3, desc: 'Pharmastic Bot automation scripts' },
+  { id: 'shivanya-rxai-system', name: 'Samay-Al-Verse/ShivanyaRxAI-System', status: 'red', errorCount: 1, desc: 'AI Diagnosis backend endpoints' },
+  { id: 'sanjeevani-whatsapp-chatbot', name: 'Samay-Al-Verse/Sanjeevani-WhatsAppChatbot', status: 'orange', errorCount: 2, desc: 'WhatsApp web chatbot interface' },
+  { id: 'shivanya-care', name: 'Samay-Al-Verse/Shivanya-Care', status: 'green', errorCount: 0, desc: 'Shivanya Care frontend UI' },
+];
+
+function DevSidebarLeft({ repos, activeRepoId, scannedRepos, setScannedRepos, onOpenRepoDetails }) {
+  const handlePlayClick = (repoName, e) => {
+    e.stopPropagation();
+    setScannedRepos(prev => ({ ...prev, [repoName]: true }));
+  };
+
+  return (
+    <aside className="dev-sidebar-left">
+      <div className="dev-dropdown">
+        <div className="dev-user-avatar small"></div>
+        <span>Samay-Al-Verse</span>
+        <span className="dropdown-arrow">▼</span>
+      </div>
+
+      <div className="dev-section-header">
+        <h4>Top repositories</h4>
+      </div>
+
+      <input type="text" className="dev-input-filter" placeholder="Find a repository..." />
+
+      <div className="expanded-sidebar-content">
+        <ul className="dev-repo-list expanded">
+          {repos.map((repo, i) => (
+            <li
+              key={i}
+              onClick={() => onOpenRepoDetails(repo.id)}
+              className={repo.id === activeRepoId ? 'active' : undefined}
+              style={{ cursor: 'pointer' }}
+            >
+              <span className={`status-dot ${repo.status}`}></span>
+              <span className="repo-name">{repo.name}</span>
+              {!scannedRepos[repo.name] ? (
+                <button
+                  onClick={(e) => handlePlayClick(repo.name, e)}
+                  className="btn-play-scan"
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '50%',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '20px',
+                    height: '20px'
+                  }}
+                  title="Scan Repository"
+                >
+                  <FiPlay size={10} />
+                </button>
+              ) : repo.errorCount > 0 ? (
+                <span className={`error-count ${repo.status}`} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                  {repo.errorCount} Error{repo.errorCount > 1 ? 's' : ''}
+                </span>
+              ) : (
+                <span className="error-count green">Clean</span>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        <hr className="sidebar-divider" />
+
+        <h4 className="sidebar-subhead">Organizations</h4>
+        <ul className="sidebar-list">
+          <li><FaGithub className="sidebar-icon" /><span>Samay-Al-Verse</span><span className="count">6</span></li>
+          <li><FaGithub className="sidebar-icon" /><span>Open-Neuro</span><span className="count">1</span></li>
+        </ul>
+
+        <hr className="sidebar-divider" />
+
+        <h4 className="sidebar-subhead">Quick Actions</h4>
+        <ul className="sidebar-list">
+          <li><FiCpu className="sidebar-icon" /><span>Run AI Scan</span></li>
+          <li><FiAlertCircle className="sidebar-icon" /><span>View Issues</span></li>
+          <li><FaDocker className="sidebar-icon" /><span>Dockerfile Audit</span></li>
+        </ul>
+      </div>
+    </aside>
+  );
+}
+
+function RepoDetailsPage({ repos, repoFindings, scannedRepos, setScannedRepos, onOpenRepoDetails, onBackToDashboard }) {
+  const { repoId } = useParams();
+  const repo = useMemo(() => repos.find(r => r.id === repoId), [repos, repoId]);
+  const findings = repoId ? repoFindings[repoId] : null;
+  const isScanned = repo ? Boolean(scannedRepos[repo.name]) : false;
+
+  if (!repoId) return <Navigate to="/developer" replace />;
+  if (!repo) return <Navigate to="/developer" replace />;
+
+  const riskTone = repo.errorCount === 0 ? '#2ea043' : repo.errorCount >= 3 ? '#f85149' : '#d29922';
+  const riskLabel = repo.errorCount === 0 ? 'Clean' : repo.errorCount >= 3 ? 'High Risk' : 'Medium Risk';
+
+  return (
+    <div className="dev-dashboard-layout">
+      <div className="bg-glow"></div>
+      <div className="light-spot spot-1"></div>
+      <div className="light-spot spot-2"></div>
+
+      <header className="dev-topbar">
+        <div className="dev-topbar-left">
+          <button className="icon-btn" onClick={onBackToDashboard} title="Back to Dashboard">←</button>
+          <img src="/logo.png" alt="Bugsentry Logo" className="dev-logo" />
+          <span className="dev-topbar-title">Repository Details</span>
+        </div>
+        <div className="dev-topbar-center">
+          <div className="dev-search-bar">
+            <FiSearch className="search-icon" />
+            <input type="text" placeholder="Search findings..." />
+          </div>
+        </div>
+        <div className="dev-topbar-right">
+          <span style={{ fontSize: '12px', padding: '6px 10px', borderRadius: '999px', border: `1px solid ${riskTone}33`, color: riskTone, background: `${riskTone}14` }}>
+            {riskLabel}
+          </span>
+        </div>
+      </header>
+
+      <div className="dev-main-grid">
+        <DevSidebarLeft
+          repos={repos}
+          activeRepoId={repoId}
+          scannedRepos={scannedRepos}
+          setScannedRepos={setScannedRepos}
+          onOpenRepoDetails={onOpenRepoDetails}
+        />
+
+        <main className="dev-center-feed">
+          <h2 className="feed-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span>{repo.name}</span>
+            {isScanned ? (
+              <span style={{ fontSize: '12px', color: '#2ea043' }}>• scanned</span>
+            ) : (
+              <span style={{ fontSize: '12px', color: '#d29922' }}>• not scanned</span>
+            )}
+          </h2>
+
+          <div className="dev-activity-card" style={{ marginBottom: '18px' }}>
+            <div className="activity-card-header">
+              <div className="ac-avatar"></div>
+              <div className="ac-meta">
+                <span className="ac-repo">Remediation Timeline</span>
+                <span className="ac-time">estimated</span>
+              </div>
+              <button className="icon-btn"><FiMoreHorizontal /></button>
+            </div>
+            <div className="activity-card-body" style={{ marginTop: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px' }}>
+                <div className="desc-box" style={{ background: 'rgba(0,0,0,0.2)', padding: '14px', borderRadius: '8px' }}>
+                  <div style={{ color: '#8b949e', fontSize: '12px' }}>Days to remediate</div>
+                  <div style={{ color: '#e6edf3', fontSize: '22px', fontWeight: 800, marginTop: '6px' }}>{findings?.etaDaysToFix ?? 0} days</div>
+                </div>
+                <div className="desc-box" style={{ background: 'rgba(0,0,0,0.2)', padding: '14px', borderRadius: '8px' }}>
+                  <div style={{ color: '#8b949e', fontSize: '12px' }}>Crash risk window</div>
+                  <div style={{ color: '#e6edf3', fontSize: '22px', fontWeight: 800, marginTop: '6px' }}>{findings?.etaDaysToCrash ?? 0} days</div>
+                </div>
+                <div className="desc-box" style={{ background: 'rgba(0,0,0,0.2)', padding: '14px', borderRadius: '8px' }}>
+                  <div style={{ color: '#8b949e', fontSize: '12px' }}>Confidence</div>
+                  <div style={{ color: '#e6edf3', fontSize: '22px', fontWeight: 800, marginTop: '6px' }}>{findings?.confidence ?? '—'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="dev-activity-card" style={{ marginBottom: '18px', borderColor: repo.errorCount ? 'rgba(248, 81, 73, 0.35)' : 'rgba(46, 160, 67, 0.25)' }}>
+            <div className="activity-card-header">
+              <div className="ac-avatar"></div>
+              <div className="ac-meta">
+                <span className="ac-repo">Error specification</span>
+                <span className="ac-time">{repo.errorCount > 0 ? `${repo.errorCount} finding(s)` : '0 findings'}</span>
+              </div>
+              <button className="icon-btn"><FiMoreHorizontal /></button>
+            </div>
+
+            <div className="activity-card-body" style={{ marginTop: '14px' }}>
+              {repo.errorCount === 0 ? (
+                <div className="desc-box" style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px' }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#e6edf3' }}>No critical issues detected</h4>
+                  <p style={{ margin: 0, color: '#8b949e', fontSize: '13px', lineHeight: 1.6 }}>
+                    This repository is currently classified as clean. Continue monitoring dependency updates and keep CI checks strict.
+                  </p>
+                  <div style={{ marginTop: '12px' }}>
+                    <div style={{ color: '#8b949e', fontSize: '12px', marginBottom: '6px' }}>Suggested solutions</div>
+                    <ul style={{ color: '#c9d1d9', fontSize: '13px', paddingLeft: '18px', margin: 0, lineHeight: 1.7 }}>
+                      <li>Enable dependency update alerts and review weekly.</li>
+                      <li>Keep CI required checks strict (lint + build + security scan).</li>
+                      <li>Rotate secrets periodically and enforce least-privilege tokens.</li>
+                    </ul>
+                  </div>
+                </div>
+              ) : (
+                (findings?.findings ?? []).map((f, idx) => (
+                  <div key={idx} className="desc-box" style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
+                      <h4 style={{ margin: 0, color: '#e6edf3' }}>{f.title}</h4>
+                      <span style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '999px', border: `1px solid ${riskTone}33`, color: riskTone, background: `${riskTone}14`, whiteSpace: 'nowrap' }}>
+                        {f.severity}
+                      </span>
+                    </div>
+                    <p style={{ margin: '0 0 10px 0', color: '#c9d1d9', fontSize: '13px', lineHeight: 1.6 }}>
+                      {f.spec}
+                    </p>
+                    <div style={{ marginTop: '10px' }}>
+                      <div style={{ color: '#8b949e', fontSize: '12px', marginBottom: '6px' }}>Suggested solutions</div>
+                      <ul style={{ color: '#c9d1d9', fontSize: '13px', paddingLeft: '18px', margin: 0, lineHeight: 1.7 }}>
+                        {f.solutions.map((s, si) => (
+                          <li key={si}>{s}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function DeveloperDashboard({ onLogout, onBack, onOpenRepoDetails, scannedRepos, setScannedRepos }) {
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [createMenuAnchorEl, setCreateMenuAnchorEl] = useState(null);
+
+  useEffect(() => {
+    if (!showCreateMenu) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setShowCreateMenu(false);
+    };
+    const handlePointerDown = (e) => {
+      if (!createMenuAnchorEl) return;
+      const root = createMenuAnchorEl.parentElement;
+      if (root && root.contains(e.target)) return;
+      setShowCreateMenu(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [showCreateMenu, createMenuAnchorEl]);
+
   return (
     <div className="dev-dashboard-layout">
       {/* Background Elements (Consistent Glow) */}
@@ -288,61 +547,71 @@ function DeveloperDashboard({ onLogout, onBack }) {
             <input type="text" placeholder="Type / to search" />
           </div>
         </div>
-        <div className="dev-topbar-right">
-          <button className="icon-btn" onClick={onBack} title="Switch Role"><FaBriefcase style={{ fontSize: '14px' }} /></button>
-          <button className="icon-btn"><FiTerminal /></button>
-          <button className="icon-btn"><FiPlus /></button>
-          <button className="icon-btn"><FiGitBranch /></button>
-          <button className="icon-btn"><FiInbox /></button>
-          <div className="dev-user-avatar"></div>
-          <button onClick={onLogout} className="logout-btn-small">Sign Out</button>
+        <div className="dev-topbar-right" style={{ position: 'relative' }}>
+          <div className="gh-plus-group" ref={setCreateMenuAnchorEl}>
+            <button className="gh-btn-plus" title="Create">
+              <FiPlus size={14} />
+            </button>
+            <button
+              className="gh-btn-dropdown"
+              title="Create menu"
+              onClick={() => setShowCreateMenu(v => !v)}
+            >
+              <FiChevronDown size={14} />
+            </button>
+          </div>
+
+          {showCreateMenu && (
+            <div className="gh-menu" role="menu" aria-label="Create menu">
+              <button className="gh-menu-item" role="menuitem" onClick={() => setShowCreateMenu(false)}>
+                <span className="gh-menu-icon"><FiAlertCircle size={16} /></span>
+                <span>New issue</span>
+              </button>
+              <button className="gh-menu-item" role="menuitem" onClick={() => setShowCreateMenu(false)}>
+                <span className="gh-menu-icon"><FiBookOpen size={16} /></span>
+                <span>New repository</span>
+              </button>
+              <button className="gh-menu-item" role="menuitem" onClick={() => setShowCreateMenu(false)}>
+                <span className="gh-menu-icon"><FiUpload size={16} /></span>
+                <span>Import repository</span>
+              </button>
+
+              <div className="gh-menu-sep" role="separator" />
+
+              <button className="gh-menu-item" role="menuitem" onClick={() => setShowCreateMenu(false)}>
+                <span className="gh-menu-icon"><FiCpu size={16} /></span>
+                <span>New codespace</span>
+              </button>
+              <button className="gh-menu-item" role="menuitem" onClick={() => setShowCreateMenu(false)}>
+                <span className="gh-menu-icon"><FiCode size={16} /></span>
+                <span>New gist</span>
+              </button>
+
+              <div className="gh-menu-sep" role="separator" />
+
+              <button className="gh-menu-item" role="menuitem" onClick={() => setShowCreateMenu(false)}>
+                <span className="gh-menu-icon"><FiUsers size={16} /></span>
+                <span>New organization</span>
+              </button>
+              <button className="gh-menu-item" role="menuitem" onClick={() => setShowCreateMenu(false)}>
+                <span className="gh-menu-icon"><FiFileText size={16} /></span>
+                <span>New project</span>
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Main Grid content */}
       <div className="dev-main-grid">
         {/* Left Sidebar */}
-        <aside className="dev-sidebar-left">
-           <div className="dev-dropdown">
-             <div className="dev-user-avatar small"></div>
-             <span>Samay-Al-Verse</span>
-             <span className="dropdown-arrow">▼</span>
-           </div>
-           
-           <div className="dev-section-header">
-             <h4>Top repositories</h4>
-           </div>
-           
-           <input type="text" className="dev-input-filter" placeholder="Find a repository..." />
-           
-           <div className="expanded-sidebar-content">
-             <ul className="dev-repo-list expanded">
-               <li><span className="status-dot green"></span><span className="repo-name">Samay-Al-Verse/HealthOne</span></li>
-               <li><span className="status-dot orange"></span><span className="repo-name">Samay-Al-Verse/DSA</span><span className="error-count orange">1 Error</span></li>
-               <li><span className="status-dot red"></span><span className="repo-name">Samay-Al-Verse/Pharmastic-Bot</span><span className="error-count red">3 Errors</span></li>
-               <li><span className="status-dot red"></span><span className="repo-name">Samay-Al-Verse/ShivanyaRxAI-...</span><span className="error-count red">1 Error</span></li>
-               <li><span className="status-dot orange"></span><span className="repo-name">Samay-Al-Verse/Sanjeevani-WhatsAppChatbot</span><span className="error-count orange">2 Errors</span></li>
-               <li><span className="status-dot green"></span><span className="repo-name">Samay-Al-Verse/Shivanya-Care</span></li>
-             </ul>
-
-             <hr className="sidebar-divider" />
-
-             <h4 className="sidebar-subhead">Organizations</h4>
-             <ul className="sidebar-list">
-               <li><FaGithub className="sidebar-icon" /><span>Samay-Al-Verse</span><span className="count">6</span></li>
-               <li><FaGithub className="sidebar-icon" /><span>Open-Neuro</span><span className="count">1</span></li>
-             </ul>
-
-             <hr className="sidebar-divider" />
-
-             <h4 className="sidebar-subhead">Quick Actions</h4>
-             <ul className="sidebar-list">
-               <li><FiCpu className="sidebar-icon" /><span>Run AI Scan</span></li>
-               <li><FiAlertCircle className="sidebar-icon" /><span>View Issues</span></li>
-               <li><FaDocker className="sidebar-icon" /><span>Dockerfile Audit</span></li>
-             </ul>
-           </div>
-        </aside>
+        <DevSidebarLeft
+          repos={DEV_REPOS}
+          activeRepoId={null}
+          scannedRepos={scannedRepos}
+          setScannedRepos={setScannedRepos}
+          onOpenRepoDetails={onOpenRepoDetails}
+        />
 
         {/* Center Main Feed */}
         <main className="dev-center-feed">
@@ -442,26 +711,15 @@ function DeveloperDashboard({ onLogout, onBack }) {
 
            {/* Feed Header */}
            <div className="dev-feed-header">
-             <h3>Feed & Analytics</h3>
+             <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#e6edf3' }}>Feed & Analytics</h4>
              <button className="btn-outline"><FiFilter /> Filter</button>
            </div>
-
-           {/* Statistical Graph */}
-           <RiskGraph />
-
-           {/* Activity Cards */}
-           <div className="dev-activity-card">
-              <div className="activity-card-header">
-                <div className="ac-avatar"></div>
-                <div className="ac-meta">
-                  <span className="ac-repo">Universal-Commerce-Protocol/ucp</span> <span className="ac-action">released</span>
-                  <span className="ac-time">yesterday</span>
-                </div>
-                <button className="icon-btn"><FiMoreHorizontal /></button>
-              </div>
-              <div className="activity-card-body">
-                <h3>Release v2026-04-08</h3>
-              </div>
+           <div className="dev-activity-card" style={{ marginBottom: '32px', textAlign: 'center', padding: '48px 24px', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)' }}>
+             <FiAlertCircle size={32} color="rgba(255,255,255,0.2)" style={{ marginBottom: '16px' }} />
+             <h4 style={{ color: '#e6edf3', marginBottom: '8px' }}>Open a repository to view details</h4>
+             <p style={{ color: '#8b949e', fontSize: '13px', margin: 0 }}>
+               Click any repository on the left to open its dedicated page with error specifications, solutions, and remediation timelines.
+             </p>
            </div>
         </main>
       </div>
@@ -506,23 +764,184 @@ function WorkspaceView({ role, onLogout, onBack }) {
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeRole, setActiveRole] = useState(null);
+  const [scannedRepos, setScannedRepos] = useState({});
+  const navigate = useNavigate();
+
+  const repoFindings = useMemo(() => ({
+    'healthone': {
+      etaDaysToFix: 2,
+      etaDaysToCrash: 90,
+      confidence: 'Medium',
+      findings: [],
+    },
+    'dsa': {
+      etaDaysToFix: 3,
+      etaDaysToCrash: 21,
+      confidence: 'High',
+      findings: [
+        {
+          severity: 'High',
+          title: 'Unbounded recursion path in test harness',
+          spec: 'A failing edge-case can trigger deep recursion and exhaust stack limits during CI runs and on debug builds.',
+          solutions: [
+            'Add recursion depth guard or convert to iterative approach.',
+            'Add fuzz tests for worst-case inputs (e.g., sorted/duplicate-heavy arrays).',
+            'Enforce timeouts in CI for pathological cases.',
+          ],
+        },
+      ],
+    },
+    'pharmastic-bot': {
+      etaDaysToFix: 6,
+      etaDaysToCrash: 10,
+      confidence: 'High',
+      findings: [
+        {
+          severity: 'Critical',
+          title: 'Secrets leakage in automation logs',
+          spec: 'Bot execution logs can expose API keys/tokens due to verbose debug logging and unsafe string interpolation.',
+          solutions: [
+            'Rotate all exposed keys immediately and invalidate old tokens.',
+            'Mask secrets in logs (redaction middleware + allowlist logging).',
+            'Move secrets to environment variables/secret manager; never commit them.',
+          ],
+        },
+        {
+          severity: 'High',
+          title: 'Unpinned dependencies causing supply-chain drift',
+          spec: 'Dependencies are not pinned/locked, enabling unexpected upgrades that may introduce breaking changes or malicious packages.',
+          solutions: [
+            'Pin versions and commit lockfiles.',
+            'Enable dependabot/renovate with review gates.',
+            'Add SBOM + signature verification in CI.',
+          ],
+        },
+        {
+          severity: 'Medium',
+          title: 'Missing retry/backoff on external requests',
+          spec: 'Transient API failures can cascade and crash the job runner due to immediate hard failures.',
+          solutions: [
+            'Add exponential backoff retries for 429/5xx.',
+            'Add circuit-breaker for repeated failures.',
+            'Persist job state and resume instead of restarting from scratch.',
+          ],
+        },
+      ],
+    },
+    'shivanya-rxai-system': {
+      etaDaysToFix: 5,
+      etaDaysToCrash: 14,
+      confidence: 'Medium',
+      findings: [
+        {
+          severity: 'High',
+          title: 'Input validation gaps on diagnosis endpoints',
+          spec: 'Certain fields accept unexpected types/lengths, which can cause downstream model errors and service instability.',
+          solutions: [
+            'Add strict schema validation at the boundary (e.g., Zod/Joi/Pydantic).',
+            'Return structured error codes; block oversized payloads.',
+            'Add rate limiting + WAF rules for abuse patterns.',
+          ],
+        },
+      ],
+    },
+    'sanjeevani-whatsapp-chatbot': {
+      etaDaysToFix: 4,
+      etaDaysToCrash: 18,
+      confidence: 'High',
+      findings: [
+        {
+          severity: 'Medium',
+          title: 'Session store eviction causing message loop',
+          spec: 'When session state is evicted, the bot can re-process messages and create repeated replies, increasing failure rate.',
+          solutions: [
+            'Persist session state with TTL and idempotency keys.',
+            'Deduplicate inbound message IDs for 24h window.',
+            'Add a circuit breaker when repetition is detected.',
+          ],
+        },
+        {
+          severity: 'High',
+          title: 'Unhandled media parsing exceptions',
+          spec: 'Certain attachment types throw unhandled exceptions and crash the worker process.',
+          solutions: [
+            'Wrap parsers with try/catch and fall back gracefully.',
+            'Add file type allowlist and size limits.',
+            'Add poison-queue handling and retry policy.',
+          ],
+        },
+      ],
+    },
+    'shivanya-care': {
+      etaDaysToFix: 1,
+      etaDaysToCrash: 60,
+      confidence: 'Low',
+      findings: [],
+    },
+  }), []);
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setActiveRole(null);
+    setScannedRepos({});
+    navigate('/', { replace: true });
   }
 
   return (
     <>
-      {!isLoggedIn ? (
-        <LoginView onLogin={() => setIsLoggedIn(true)} />
-      ) : !activeRole ? (
-        <RoleSelectionView onLogout={handleLogout} onRoleSelect={setActiveRole} />
-      ) : activeRole === 'developer' ? (
-        <DeveloperDashboard onLogout={handleLogout} onBack={() => setActiveRole(null)} />
-      ) : (
-        <WorkspaceView role={activeRole} onLogout={handleLogout} onBack={() => setActiveRole(null)} />
-      )}
+      <Routes>
+        <Route
+          path="/"
+          element={
+            !isLoggedIn ? (
+              <LoginView onLogin={() => setIsLoggedIn(true)} />
+            ) : !activeRole ? (
+              <RoleSelectionView onLogout={handleLogout} onRoleSelect={(role) => { setActiveRole(role); if (role === 'developer') navigate('/developer'); }} />
+            ) : activeRole === 'developer' ? (
+              <Navigate to="/developer" replace />
+            ) : (
+              <WorkspaceView role={activeRole} onLogout={handleLogout} onBack={() => { setActiveRole(null); navigate('/'); }} />
+            )
+          }
+        />
+
+        <Route
+          path="/developer"
+          element={
+            isLoggedIn && activeRole === 'developer' ? (
+              <DeveloperDashboard
+                onLogout={handleLogout}
+                onBack={() => { setActiveRole(null); navigate('/'); }}
+                onOpenRepoDetails={(repoId) => navigate(`/repo/${repoId}`)}
+                scannedRepos={scannedRepos}
+                setScannedRepos={setScannedRepos}
+              />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/repo/:repoId"
+          element={
+            isLoggedIn && activeRole === 'developer' ? (
+              <RepoDetailsPage
+                repos={DEV_REPOS}
+                repoFindings={repoFindings}
+                scannedRepos={scannedRepos}
+                setScannedRepos={setScannedRepos}
+                onOpenRepoDetails={(repoId) => navigate(`/repo/${repoId}`)}
+                onBackToDashboard={() => navigate('/developer')}
+              />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </>
   );
 }

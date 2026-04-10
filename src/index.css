@@ -657,6 +657,16 @@ body {
 }
 .dev-repo-list li:hover { color: #fff; text-decoration: underline; }
 
+.dev-repo-list li.active {
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  margin-left: -8px;
+  margin-right: -8px;
+  text-decoration: none;
+}
+
 .repo-avatar {
   width: 16px; height: 16px;
   border-radius: 50%;
@@ -938,6 +948,89 @@ body {
 
 .gh-star-group {
   display: flex;
+}
+
+.gh-plus-group {
+  display: flex;
+}
+
+.gh-btn-plus {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-right: none;
+  color: #c9d1d9;
+  padding: 4px 10px;
+  border-radius: 6px 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gh-btn-plus:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.gh-menu {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  z-index: 200;
+  min-width: 260px;
+  padding: 8px 0;
+  border-radius: 12px;
+  background: #161b22 !important;
+  background-color: #161b22 !important;
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.65);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  opacity: 1;
+  filter: none;
+  mix-blend-mode: normal;
+  isolation: isolate;
+}
+
+.gh-menu-item {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: transparent;
+  color: #e6edf3;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  border: none;
+  margin: 0 8px;
+}
+
+.gh-menu-item + .gh-menu-item {
+  margin-top: 2px;
+}
+
+.gh-menu-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.gh-menu-sep {
+  height: 1px;
+  margin: 8px 0;
+  background: rgba(255,255,255,0.10);
+}
+
+.gh-menu-icon {
+  width: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.75);
 }
 
 .gh-btn-star {
