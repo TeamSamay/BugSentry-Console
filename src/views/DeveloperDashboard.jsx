@@ -695,21 +695,25 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                   </div>
 
                   <div className="summary-card">
-                    <div className="card-header"><FiShield className="header-icon" /><h3>Detected Risky Files (Auto)</h3></div>
-                    <div className="risk-file-list">
+                    <div className="card-header"><FiShield className="header-icon" /><h3>Detected Risky Files (Automated Audit)</h3></div>
+                    <div className="risk-file-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
                       {topRiskyFiles.length === 0 && <p className="mini-note">Risky file list is not available yet. Run agents again for deep scan results.</p>}
                       {topRiskyFiles.map((file, idx) => (
-                        <div key={`${file.path}-${idx}`} className="risk-file-item">
+                        <div key={`${file.path}-${idx}`} className="risk-file-item creative">
                           <div className="risk-file-top">
-                            <strong>{file.path}</strong>
-                            <span className={`risk-badge ${file.risk_level || 'low'}`}>{file.risk_level || 'low'} • {file.risk_score ?? 0}</span>
+                            <strong className="file-path-text">{file.path.split('/').pop()}</strong>
+                            <span className={`risk-badge-elite ${file.risk_level || 'low'}`}>{file.risk_score ?? 0}% Risk</span>
                           </div>
-                          <p>{(file.signals || []).slice(0, 2).join(' | ') || file.primary_risk || 'Potential risk detected'}</p>
+                          <div className="severity-bar-container">
+                            <div className={`severity-bar-fill ${file.risk_level || 'low'}`} style={{ width: `${file.risk_score ?? 20}%` }} />
+                          </div>
+                          <p className="file-sub-text">{file.path}</p>
+                          <p className="risk-signal-tags">{(file.signals || []).slice(0, 3).map(s => <span key={s} className="signal-tag">{s}</span>)}</p>
                           <div className="risk-footer">
-                            <div className="risk-meta">Language: {file.language || 'Unknown'} • Chunks: {file.chunk_count ?? 0}</div>
+                            <div className="risk-meta">Language: <strong>{file.language || 'JS'}</strong></div>
                             <button className="btn-details-mini" onClick={() => setActiveSolution({
                               title: `Risk Analysis: ${file.path}`,
-                              content: `### Risk Breakdown\n\n**File Path:** ${file.path}\n**Risk Level:** ${file.risk_level}\n**Score:** ${file.risk_score}\n\n#### Detected Signals:\n${(file.signals || []).map(s => `- ${s}`).join('\n')}\n\n#### Primary Risk:\n${file.primary_risk || 'The automated scanner identified patterns consistent with potential security vulnerabilities.'}\n\n#### Recommended Remediation:\n\`\`\`javascript\n// AI-Generated Remediation Strategy for ${file.path}\nfunction validateAndSanitize(data) {\n  if (typeof data !== "string") return "";\n  return data.replace(/[^a-zA-Z0-9]/g, "");\n}\n\`\`\``
+                              content: `### Risk Breakdown\n\n**File Path:** ${file.path}\n**Risk Level:** ${file.risk_level}\n**Score:** ${file.risk_score}%\n\n#### Detected Signals:\n${(file.signals || []).map(s => `- ${s}`).join('\n')}\n\n#### Primary Risk Analysis:\n${file.primary_risk || 'The automated scanner identified patterns consistent with potential security vulnerabilities.'}\n\n#### Recommended Remediation:\n\`\`\`javascript\n// AI-Generated Remediation Strategy for ${file.path}\nfunction validateAndSanitize(data) {\n  if (typeof data !== "string") return "";\n  return data.replace(/[^a-zA-Z0-9]/g, "");\n}\n\`\`\``
                             })}>Analyze Risk</button>
                           </div>
                         </div>
@@ -718,20 +722,28 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                   </div>
 
                   <div className="summary-card" id="risk-findings">
-                    <div className="card-header"><FaBug className="header-icon" /><h3>Where Bugs Can Appear (ETA + Impact)</h3></div>
-                    <div className="timeline-list">
+                    <div className="card-header"><FaBug className="header-icon" /><h3>Bug Prediction Timeline (ETA + Impact)</h3></div>
+                    <div className="timeline-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                       {probableFailures.length === 0 && <p className="mini-note">No structured failure timeline available yet. Re-run scan or ask Assistant for file-level bugs.</p>}
                       {probableFailures.map((row, idx) => (
-                        <div key={`${row.area}-${idx}`} className="timeline-item-card">
+                        <div key={`${row.area}-${idx}`} className="timeline-item-card creative">
                           <div className="timeline-head">
-                            <strong>{row.area || `Area ${idx + 1}`}</strong>
-                            <span>{row.eta_days ? `${row.eta_days} days` : 'Unknown ETA'}</span>
+                            <div className="area-title">
+                              <FiAlertCircle className={`icon-${row.impact?.toLowerCase() || 'medium'}`} />
+                              <strong>{row.area || `Area ${idx + 1}`}</strong>
+                            </div>
+                            <span className="eta-badge">{row.eta_days ? `ETA: ${row.eta_days}d` : 'Unknown ETA'}</span>
                           </div>
-                          <p>{row.bug_type}</p>
+                          <p className="bug-description">{row.bug_type}</p>
+                          <div className="confidence-meter">
+                            <label>Confidence</label>
+                            <div className="dot-meter">
+                              {[1, 2, 3, 4, 5].map(i => <span key={i} className={`dot ${i <= (row.confidence === 'High' ? 5 : 3) ? 'active' : ''}`} />)}
+                            </div>
+                          </div>
                           <div className="timeline-footer">
                             <div className="timeline-meta">
-                              <span>Impact: {row.impact || 'Medium'}</span>
-                              <span>Confidence: {row.confidence || 'Medium'}</span>
+                              <span>Impact: <strong>{row.impact || 'Medium'}</strong></span>
                             </div>
                             <button className="btn-details-mini" onClick={() => setActiveSolution({
                               title: `Failure Prediction: ${row.area}`,
@@ -787,15 +799,17 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                     </div>
                   </div>
 
-                  <div className="summary-card">
-                    <div className="card-header"><FaCode className="header-icon" /><h3>Directory Overview</h3></div>
-                    <div className="tree-view">
+                  <div className="summary-card directory-overview-card">
+                    <div className="card-header"><FaCode className="header-icon" /><h3>Project Architecture & File System</h3></div>
+                    <div className="tree-view-elite">
                       {treeRows.length === 0 && <p className="mini-note">Directory scan unavailable for this run.</p>}
                       {treeRows.map((row, idx) => (
-                        <div key={`${row.type}-${row.path}-${idx}`} className={`tree-row ${row.type}`}>
-                          <span className="tree-indent" style={{ width: `${row.depth * 14}px` }}></span>
+                        <div key={`${row.type}-${row.path}-${idx}`} className={`tree-row-elite ${row.type}`}>
+                          <span className="tree-indent" style={{ width: `${row.depth * 16}px` }}></span>
+                          <span className="tree-line" />
                           <span className="tree-icon">{row.type === 'dir' ? '📁' : '📄'}</span>
-                          <span className="tree-label">{row.path}</span>
+                          <span className="tree-label">{row.path.split('/').pop()}</span>
+                          <span className="tree-path-full">{row.path}</span>
                         </div>
                       ))}
                     </div>
