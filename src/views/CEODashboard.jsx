@@ -1586,7 +1586,7 @@ const CEO_SIDEBAR_GROUPS = [
 ];
 
 
-export default function CompleteCeo({ token, onLogout, onBack }) {
+export function CEODashboard({ token, onLogout, onBack }) {
   const { user } = useCeoUser(token);
   const m = CEO_EXECUTIVE_METRICS;
   const [showUserMenu, setShowUserMenu] = useState(false);
