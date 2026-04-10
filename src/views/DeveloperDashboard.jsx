@@ -774,24 +774,62 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                   </div>
 
                   <div className="analysis-grid vertical-brief">
-                    <div className="summary-card full-width brief-card-premium">
-                      <div className="card-header brief-header-static">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div className="header-icon-wrapper brief-icon"><FaBriefcase /></div>
-                          <h3 style={{ color: '#fff' }}>Repository Executive Brief</h3>
+                  <div className="brief-release-card animate-slide-down">
+                    <div className="release-header">
+                      <div className="repo-brand">
+                        <div className="avatar-shield-wrapper">
+                          <img 
+                            src={selectedRepo?.owner?.avatar_url || 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'} 
+                            alt="logo" 
+                            className="repo-main-avatar"
+                          />
+                          <div className="certified-badge-mini"><FiShield size={12} /></div>
+                        </div>
+                        <div className="repo-info-text">
+                          <h4 className="repo-name-label">{selectedRepo?.full_name} <span className="release-status-text">released audit</span></h4>
+                          <span className="timestamp-audit">{selectedRepo?.updated_at ? new Date(selectedRepo.updated_at).toLocaleDateString() : 'recently scanned'}</span>
                         </div>
                       </div>
-                      <div className="card-body">
-                        <div className="brief-vertical-list">
-                          {repoBriefPoints.map((point, index) => (
-                            <div key={`brief-${index}`} className="brief-vertical-item">
-                              <span className="brief-bullet" />
-                              <p style={{ color: '#c9d1d9' }}>{point}</p>
-                            </div>
-                          ))}
+                      <button className="btn-dots-menu"><FiMoreHorizontal /></button>
+                    </div>
+
+                    <div className="release-body">
+                      <h2 className="main-release-title">Executive Brief v{evolutionData?.current_version?.replace('v', '') || '1.0.4'}</h2>
+                      
+                      <div className="whats-changed-section">
+                        <div className="section-title">
+                          <FiZap className="zap-sparkle" /> <h3>What's Analyzed</h3>
                         </div>
+                        <ul className="changelog-bullets">
+                          {repoBriefPoints.length > 0 ? repoBriefPoints.map((p, i) => (
+                            <li key={i}>{p}</li>
+                          )) : (
+                            <>
+                              <li>Structural audit completed on <strong>{directoryHotspots.length}</strong> high-risk folders.</li>
+                              <li>Security regression check identified <strong>{probableFailures.length}</strong> probable bugs.</li>
+                              <li>Remediation pipeline calculated <strong>{fixPlan.length}</strong> deployment-ready patches.</li>
+                            </>
+                          )}
+                        </ul>
+                      </div>
+                      <button className="btn-read-detailed" onClick={() => window.scrollTo({ top: 900, behavior: 'smooth' })}>Read detailed audit report</button>
+                    </div>
+
+                    <div className="release-footer-elite">
+                      <div className="contributor-pulse">
+                        <span className="footer-small-label">Security Contributors</span>
+                        <div className="contributor-avatars">
+                          {[1,2,3,4,5,6].map(i => (
+                            <img key={i} src={`https://i.pravatar.cc/50?u=${selectedRepo?.id}${i}`} alt="user" className="avatar-mini" />
+                          ))}
+                          <span className="extra-count">+17</span>
+                        </div>
+                      </div>
+                      <div className="footer-actions-tray">
+                        <button className="action-emoji"><FiSmile /></button>
                       </div>
                     </div>
+                  </div>
                   </div>
 
                   <div className="summary-card collapsible-card">

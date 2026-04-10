@@ -5293,3 +5293,179 @@ a.auth-btn {
   background: radial-gradient(circle at top right, rgba(57, 211, 83, 0.05), transparent);
 }
 
+
+/* GitHub Release-Style Executive Brief */
+.brief-release-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  color: #c9d1d9;
+}
+
+.release-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.repo-brand {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.avatar-shield-wrapper {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.repo-main-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid #30363d;
+}
+
+.certified-badge-mini {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #238636;
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #0d1117;
+}
+
+.repo-name-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #c9d1d9;
+  margin: 0;
+}
+
+.release-status-text {
+  font-weight: 400;
+  color: #8b949e;
+}
+
+.timestamp-audit {
+  font-size: 13px;
+  color: #8b949e;
+  display: block;
+}
+
+.btn-dots-menu {
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.release-body {
+  border: 1px solid #30363d;
+  background: #161b22;
+  border-radius: 6px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.main-release-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 20px;
+}
+
+.whats-changed-section h3 {
+  font-size: 18px;
+  color: #fff;
+  margin: 0;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+.zap-sparkle { color: #d29922; }
+
+.changelog-bullets {
+  list-style: disc;
+  padding-left: 20px;
+}
+
+.changelog-bullets li {
+  margin-bottom: 12px;
+  color: #c9d1d9;
+}
+
+.btn-read-detailed {
+  background: transparent;
+  border: none;
+  color: #58a6ff;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 16px;
+  text-decoration: underline;
+}
+
+.release-footer-elite {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #30363d;
+  padding-top: 16px;
+}
+
+.footer-small-label {
+  font-size: 12px;
+  color: #8b949e;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.contributor-avatars {
+  display: flex;
+  align-items: center;
+}
+
+.avatar-mini {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #0d1117;
+  margin-left: -8px;
+}
+
+.avatar-mini:first-child { margin-left: 0; }
+
+.extra-count {
+  font-size: 12px;
+  color: #8b949e;
+  margin-left: 8px;
+}
+
+.action-emoji {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid #30363d;
+  border-radius: 20px;
+  padding: 4px 12px;
+  color: #8b949e;
+  cursor: pointer;
+}
+
