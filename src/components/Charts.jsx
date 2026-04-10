@@ -1,8 +1,72 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-export function RiskGraph() {
-  const data = [15, 25, 45, 30, 60, 40, 20];
+export function ContributionGraph() {
+  // Generate mock GitHub contribution data
+  const days = 14; // columns
+  const weeks = 4;
+  const data = Array.from({ length: 7 * weeks }, (_, i) => ({
+    count: Math.floor(Math.random() * 5),
+    date: i
+  }));
+
+  const getColor = (count) => {
+    if (count === 0) return 'rgba(255, 255, 255, 0.05)';
+    if (count === 1) return '#0e4429';
+    if (count === 2) return '#006d32';
+    if (count === 3) return '#26a641';
+    return '#39d353';
+  };
+
+  return (
+    <div className="dev-activity-card" style={{ marginBottom: '32px' }}>
+      <div className="activity-card-header">
+        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#fff' }}>Organizational Security Contributions</h3>
+        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Last 30 days</span>
+      </div>
+      <div className="contribution-grid-wrapper" style={{ marginTop: '16px' }}>
+        <div className="contribution-grid" style={{ 
+          display: 'grid', 
+          gridTemplateColumns: `repeat(${weeks}, 1fr)`, 
+          gridTemplateRows: 'repeat(7, 1fr)', 
+          gridAutoFlow: 'column', 
+          gap: '4px',
+          width: 'fit-content'
+        }}>
+          {data.map((day, i) => (
+            <div 
+              key={i} 
+              style={{ 
+                width: '12px', 
+                height: '12px', 
+                backgroundColor: getColor(day.count), 
+                borderRadius: '2px',
+                transition: 'transform 0.2s',
+                cursor: 'pointer'
+              }} 
+              title={`${day.count} security audits`}
+              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            />
+          ))}
+        </div>
+        <div className="contribution-legend" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '12px' }}>
+          <span>Less</span>
+          <div style={{ width: '10px', height: '10px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '2px' }} />
+          <div style={{ width: '10px', height: '10px', backgroundColor: '#0e4429', borderRadius: '2px' }} />
+          <div style={{ width: '10px', height: '10px', backgroundColor: '#006d32', borderRadius: '2px' }} />
+          <div style={{ width: '10px', height: '10px', backgroundColor: '#26a641', borderRadius: '2px' }} />
+          <div style={{ width: '10px', height: '10px', backgroundColor: '#39d353', borderRadius: '2px' }} />
+          <span>More</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function RiskGraph({ data: inputData }) {
+  const defaultData = [15, 25, 45, 30, 60, 40, 20];
+  const data = inputData || defaultData;
   const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const width = 600;
   const height = 120;
@@ -26,7 +90,7 @@ export function RiskGraph() {
       <div className="dev-feed-header" style={{ marginBottom: '32px' }}>
         <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Repository Risk Trend</h3>
         <span style={{ background: 'rgba(210, 153, 34, 0.1)', color: '#d29922', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', border: '1px solid rgba(210, 153, 34, 0.2)' }}>
-          Medium Risk
+          {data[data.length - 1] > 50 ? 'High Risk' : 'Medium Risk'}
         </span>
       </div>
       <div style={{ width: '100%', height: 'auto', paddingBottom: '12px' }}>
@@ -52,7 +116,7 @@ export function RiskGraph() {
   );
 }
 
-const riskData = [
+const defaultRiskData = [
   { name: 'Mon', risk: 400, vulnerabilities: 24 },
   { name: 'Tue', risk: 300, vulnerabilities: 13 },
   { name: 'Wed', risk: 550, vulnerabilities: 8 },
@@ -62,7 +126,8 @@ const riskData = [
   { name: 'Sun', risk: 1490, vulnerabilities: 43 },
 ];
 
-export function RepositoryRiskChart() {
+export function RepositoryRiskChart({ data: inputData }) {
+  const data = inputData || defaultRiskData;
   return (
     <div className="dev-activity-card" style={{ marginBottom: '32px' }}>
       <div className="activity-card-header">
@@ -70,7 +135,7 @@ export function RepositoryRiskChart() {
       </div>
       <div style={{ width: '100%', height: 260 }}>
         <ResponsiveContainer>
-          <AreaChart data={riskData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#f85149" stopOpacity={0.5} />

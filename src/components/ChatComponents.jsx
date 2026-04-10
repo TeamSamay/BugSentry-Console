@@ -56,6 +56,26 @@ export function ChatMessage({ msg, onViewSolution, noTitle }) {
         </div>
       );
     }
+    if (type === 'BUG_LIST') {
+      const bugItems = content.split('\n').filter(l => l.trim().startsWith('-'));
+      return (
+        <div className="ai-ui-card bug-list-card">
+          <div className="card-tag">Identified Vulnerabilities</div>
+          <h2 className="card-title-md">Bug Sentry Scan Results</h2>
+          <div className="bug-items-mini">
+            {bugItems.slice(0, 3).map((bug, i) => (
+              <div key={i} className="bug-item-mini">
+                <FiZap style={{ color: '#f85149' }} />
+                <span>{bug.replace(/^[-*]\s*/, '')}</span>
+              </div>
+            ))}
+          </div>
+          <button className="btn-card-action primary" onClick={() => onViewSolution({ title: 'Full Bug Report', content })}>
+            View All Findings
+          </button>
+        </div>
+      );
+    }
     return null;
   };
 
@@ -64,6 +84,7 @@ export function ChatMessage({ msg, onViewSolution, noTitle }) {
 
   const prMatch = text.match(/\[PR_CARD\]([\s\S]*?)\[\/PR_CARD\]/);
   const issueMatch = text.match(/\[ISSUE_CARD\]([\s\S]*?)\[\/ISSUE_CARD\]/);
+  const bugMatch = text.match(/\[BUG_LIST\]([\s\S]*?)\[\/BUG_LIST\]/);
 
   if (prMatch) return (
     <div className={`chat-msg ${isBot ? 'chat-msg-bot' : 'chat-msg-user'}`}>
@@ -74,6 +95,12 @@ export function ChatMessage({ msg, onViewSolution, noTitle }) {
   if (issueMatch) return (
     <div className={`chat-msg ${isBot ? 'chat-msg-bot' : 'chat-msg-user'}`}>
       <div className="chat-bubble-raw">{renderCard(issueMatch[1].trim(), 'ISSUE')}</div>
+    </div>
+  );
+
+  if (bugMatch) return (
+    <div className={`chat-msg ${isBot ? 'chat-msg-bot' : 'chat-msg-user'}`}>
+      <div className="chat-bubble-raw">{renderCard(bugMatch[1].trim(), 'BUG_LIST')}</div>
     </div>
   );
 

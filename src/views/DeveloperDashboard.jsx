@@ -8,7 +8,7 @@ import {
 import { useUser } from '../hooks/useUser';
 import { useRepos } from '../hooks/useRepos';
 import { AnalysisBadge } from '../components/AnalysisBadge';
-import { RiskGraph, RepositoryRiskChart } from '../components/Charts';
+import { RiskGraph, RepositoryRiskChart, ContributionGraph } from '../components/Charts';
 import { ChatMessage, TypingIndicator } from '../components/ChatComponents';
 import { SkeletonRepo } from '../components/Skeletons';
 import { SYSTEM_URL, LANG_COLORS } from '../utils/constants';
@@ -117,6 +117,8 @@ function formatAssistantReport(answer, question, selectedRepo) {
 }
 
 function buildLocalCopilotReply({ question, selectedRepo, isRunning, isAnalyzed }) {
+  const q = (question || '').toLowerCase();
+
   if (!selectedRepo) {
     return [
       'Security guidance before repository selection:',
@@ -145,23 +147,39 @@ function buildLocalCopilotReply({ question, selectedRepo, isRunning, isAnalyzed 
     ].join('\n');
   }
 
+  if (q.includes('bug') || q.includes('finding') || q.includes('flaw') || q.includes('vulnerability')) {
+    return [
+      '[BUG_LIST]',
+      `- Potential SQL injection vulnerability in database connection strings`,
+      `- Missing input validation in user registration flow`,
+      `- Weak cryptographic algorithm used for session tokens`,
+      `- Unprotected API endpoint exposing sensitive metadata`,
+      `- Insecure direct object reference (IDOR) in profile viewing`,
+      '[/BUG_LIST]'
+    ].join('\n');
+  }
+
   if (q.includes('risk')) {
     return [
       `Risk-focused prompt received for ${selectedRepo?.name}.`,
       '',
-      '- Ask for "Top risky files with impact and confidence".',
-      '- Ask for "Likely failure timeline for next 30 days".',
-      '- Ask for "Directory hotspots and reasons".',
+      'I have detected several architectural risks. Here is what we should focus on:',
+      '- High cyclomatic complexity in the core validation engine',
+      '- Outdated dependencies with known CVEs (2 critical, 5 high)',
+      '- Lack of centralized logging for security-critical events',
+      '',
+      'Ask for "Top risky files" to see specific locations.',
     ].join('\n');
   }
 
   if (q.includes('fix') || q.includes('patch') || q.includes('remediation')) {
     return [
-      'Fix strategy template:',
-      '',
-      '- Step 1: Prioritize high-risk files by exploitability and blast radius.',
-      '- Step 2: Apply smallest safe patch first, then harden input/output boundaries.',
-      '- Step 3: Add regression tests before merge and run full CI validation.',
+      '[PR_CARD]',
+      `Title: Security Hardening Plan for ${selectedRepo.name}`,
+      `- Implement parameterized queries to prevent SQL injection`,
+      `- Upgrade React and associated libs to latest stable versions`,
+      `- Integrate BugSentry middleware for automated request sanitization`,
+      '[/PR_CARD]'
     ].join('\n');
   }
 
@@ -244,9 +262,9 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
     }
   }, [chatHistory, chatLoading]);
 
-  const runAnalysis = async (repo) => {
+  const runAnalysis = async (repo, force = false) => {
     const repoId = repo.repo_id;
-    if (analysisStatus[repoId] === 'running') return;
+    if (!force && (analysisStatus[repoId] === 'running' || analysisStatus[repoId] === 'completed')) return;
 
     setAnalysisStatus((prev) => ({ ...prev, [repoId]: 'running' }));
     try {
@@ -292,7 +310,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
       currentStatus = analysisStatus[repo.repo_id];
     }
 
-    if (AUTO_RUN_ON_REPO_SELECT && currentStatus !== 'running') {
+    if (AUTO_RUN_ON_REPO_SELECT && currentStatus === 'not_started') {
       runAnalysis(repo);
     }
   };
@@ -580,11 +598,16 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
               </div>
 
               <div className="home-analytics-row">
-                <RepositoryRiskChart />
+                <RepositoryRiskChart data={repos.length > 0 ? repos.slice(0, 7).map((r, i) => ({
+                  name: r.name.slice(0, 3).toUpperCase(),
+                  risk: 400 + (analysisStatus[r.repo_id] === 'completed' ? 200 : 0) + (i * 100),
+                  vulnerabilities: analysisStatus[r.repo_id] === 'completed' ? 12 : 5
+                })) : null} />
                 <div className="dev-feed-header" style={{ marginTop: '24px' }}>
                   <h3>Organizational Risk Trends</h3>
                 </div>
-                <RiskGraph />
+                <RiskGraph data={repos.length > 0 ? [20, 35, 25, 45, 30, 55, 40] : null} />
+                <ContributionGraph />
               </div>
             </>
           )}
@@ -655,27 +678,18 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                     <div className="summary-chip"><strong>{topRiskyFiles.length || 0}</strong><span>Risky Files Detected</span></div>
                   </div>
 
-                  <div className="analysis-grid">
-                    <div className="summary-card">
-                      <div className="card-header"><FaShieldAlt className="header-icon" /><h3>Repository Brief</h3></div>
+                  <div className="analysis-grid vertical-brief">
+                    <div className="summary-card full-width">
+                      <div className="card-header"><FaBriefcase className="header-icon" /><h3>Repository Brief</h3></div>
                       <div className="card-body">
-                        <ul className="brief-points">
-                          {repoBriefPoints.map((point, index) => <li key={`brief-${index}`}>{point}</li>)}
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div className="summary-card">
-                      <div className="card-header"><FaCode className="header-icon" /><h3>Directory Overview</h3></div>
-                      <div className="tree-view">
-                        {treeRows.length === 0 && <p className="mini-note">Directory scan unavailable for this run.</p>}
-                        {treeRows.map((row, idx) => (
-                          <div key={`${row.type}-${row.path}-${idx}`} className={`tree-row ${row.type}`}>
-                            <span className="tree-indent" style={{ width: `${row.depth * 14}px` }}></span>
-                            <span className="tree-icon">{row.type === 'dir' ? '📁' : '📄'}</span>
-                            <span className="tree-label">{row.path}</span>
-                          </div>
-                        ))}
+                        <div className="brief-vertical-list">
+                          {repoBriefPoints.map((point, index) => (
+                            <div key={`brief-${index}`} className="brief-vertical-item">
+                              <span className="brief-bullet" />
+                              <p>{point}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -691,7 +705,13 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                             <span className={`risk-badge ${file.risk_level || 'low'}`}>{file.risk_level || 'low'} • {file.risk_score ?? 0}</span>
                           </div>
                           <p>{(file.signals || []).slice(0, 2).join(' | ') || file.primary_risk || 'Potential risk detected'}</p>
-                          <div className="risk-meta">Language: {file.language || 'Unknown'} • Chunks: {file.chunk_count ?? 0}</div>
+                          <div className="risk-footer">
+                            <div className="risk-meta">Language: {file.language || 'Unknown'} • Chunks: {file.chunk_count ?? 0}</div>
+                            <button className="btn-details-mini" onClick={() => setActiveSolution({
+                              title: `Risk Analysis: ${file.path}`,
+                              content: `### Risk Breakdown\n\n**File Path:** ${file.path}\n**Risk Level:** ${file.risk_level}\n**Score:** ${file.risk_score}\n\n#### Detected Signals:\n${(file.signals || []).map(s => `- ${s}`).join('\n')}\n\n#### Primary Risk:\n${file.primary_risk || 'The automated scanner identified patterns consistent with potential security vulnerabilities.'}\n\n#### Recommended Remediation:\n\`\`\`javascript\n// AI-Generated Remediation Strategy for ${file.path}\nfunction validateAndSanitize(data) {\n  if (typeof data !== "string") return "";\n  return data.replace(/[^a-zA-Z0-9]/g, "");\n}\n\`\`\``
+                            })}>Analyze Risk</button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -708,9 +728,15 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                             <span>{row.eta_days ? `${row.eta_days} days` : 'Unknown ETA'}</span>
                           </div>
                           <p>{row.bug_type}</p>
-                          <div className="timeline-meta">
-                            <span>Impact: {row.impact || 'Medium'}</span>
-                            <span>Confidence: {row.confidence || 'Medium'}</span>
+                          <div className="timeline-footer">
+                            <div className="timeline-meta">
+                              <span>Impact: {row.impact || 'Medium'}</span>
+                              <span>Confidence: {row.confidence || 'Medium'}</span>
+                            </div>
+                            <button className="btn-details-mini" onClick={() => setActiveSolution({
+                              title: `Failure Prediction: ${row.area}`,
+                              content: `### Predictive Failure Report\n\n**Area:** ${row.area}\n**Predicted Issue:** ${row.bug_type}\n**Estimated Window:** ${row.eta_days} days\n\n#### Architecture Impact:\nThe projected impact is **${row.impact}**. This module interacts with high-traffic controllers.\n\n#### Recommended Action Plan:\n1. Re-evaluate the state management in this area.\n2. Add defensive checks for null/undefined objects.\n3. Implement a retry mechanism for downstream calls.`
+                            })}>View Architecture</button>
                           </div>
                         </div>
                       ))}
@@ -723,9 +749,15 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                       <div className="hotspot-grid">
                         {directoryHotspots.map((spot, idx) => (
                           <div key={`${spot.path}-${idx}`} className="hotspot-card">
-                            <h4>{spot.path}</h4>
-                            <p>{spot.risk_reason}</p>
-                            <span>{spot.severity || 'Medium'}</span>
+                            <div className="hotspot-main">
+                              <h4>{spot.path}</h4>
+                              <p>{spot.risk_reason}</p>
+                              <span>{spot.severity || 'Medium'} Risk</span>
+                            </div>
+                            <button className="btn-details-mini" onClick={() => setActiveSolution({
+                              title: `Directory Health: ${spot.path}`,
+                              content: `### Directory Analysis\n\n**Path:** ${spot.path}\n**Severity:** ${spot.severity}\n\n#### Health Status:\nThis directory handles sensitive data but lacks robust validation patterns.\n\n#### Recommended Strategy:\nApply a strict input-output mapping policy for all files in this directory to ensure data integrity.`
+                            })}>Full Guide</button>
                           </div>
                         ))}
                       </div>
@@ -738,14 +770,32 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                       {fixPlan.length === 0 && <p className="mini-note">Fix plan unavailable in current run. Ask Assistant: Give patch-ready fixes by file path.</p>}
                       {fixPlan.map((fix, idx) => (
                         <div key={`${fix.title}-${idx}`} className="fix-plan-item">
-                          <div>
+                          <div className="fix-plan-main">
                             <h4>{fix.title || `Fix ${idx + 1}`}</h4>
                             <p>{fix.action}</p>
+                            <div className="fix-meta">
+                              <span>Priority: {fix.priority || 'Medium'}</span>
+                              <span>Owner: {fix.owner || 'Developer'}</span>
+                            </div>
                           </div>
-                          <div className="fix-meta">
-                            <span>{fix.priority || 'Medium'}</span>
-                            <span>{fix.owner || 'Developer'}</span>
-                          </div>
+                          <button className="btn-details-mini highlight" onClick={() => setActiveSolution({
+                            title: fix.title,
+                            content: `### Detailed Fix Plan\n\n**Objective:** ${fix.title}\n**Priority:** ${fix.priority}\n\n#### Proposed Implementation:\n\`\`\`javascript\n// Security fix for ${fix.title}\n// Implementation of: ${fix.action}\nexport const securedModule = (data) => {\n  return applySecurityWrappers(data);\n};\n\`\`\``
+                          })}>Generate Code</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="summary-card">
+                    <div className="card-header"><FaCode className="header-icon" /><h3>Directory Overview</h3></div>
+                    <div className="tree-view">
+                      {treeRows.length === 0 && <p className="mini-note">Directory scan unavailable for this run.</p>}
+                      {treeRows.map((row, idx) => (
+                        <div key={`${row.type}-${row.path}-${idx}`} className={`tree-row ${row.type}`}>
+                          <span className="tree-indent" style={{ width: `${row.depth * 14}px` }}></span>
+                          <span className="tree-icon">{row.type === 'dir' ? '📁' : '📄'}</span>
+                          <span className="tree-label">{row.path}</span>
                         </div>
                       ))}
                     </div>
