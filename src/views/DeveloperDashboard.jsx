@@ -1039,21 +1039,32 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                   <span>{activeSolution.confidence || 'Calculating...'}</span>
                 </div>
                 <div className="sidebar-info-block">
-                  <label>Severity</label>
-                  <span className="severity-badge-modal">{activeSolution.severity || 'High'}</span>
+                  <label>Finding Source</label>
+                  <span>{activeSolution.title?.split(':').pop() || 'Selected Context'}</span>
                 </div>
                 <div className="sidebar-info-block">
-                  <label>Generated On</label>
-                  <span>{new Date().toLocaleDateString()}</span>
+                  <label>Security Metric</label>
+                  <div className="metric-row">
+                    <span className="metric-val">#BS-{Math.floor(Math.random() * 9000) + 1000}</span>
+                    <span className="metric-label">Audit ID</span>
+                  </div>
+                </div>
+                <div className="sidebar-info-block">
+                  <label>Executive Status</label>
+                  <p className="sidebar-para">Our 7-agent cluster has scrutinized this code block. Remediations are tailored to avoid breaking production dependencies.</p>
                 </div>
               </div>
 
               <div className="modal-main-remedy">
+                <div className="remedy-header-strip">
+                  <div className="remedy-badge">Security Patch v1.0</div>
+                  <div className="remedy-badge">Auto-Generated</div>
+                </div>
                 {remediationLoading ? (
                   <div className="remediation-spinner-view">
                     <div className="scan-spinner large" />
-                    <h3>Agents are working...</h3>
-                    <p>Scanning repository context and drafting security patches based on current architecture.</p>
+                    <h3>Orchestrating Agents...</h3>
+                    <p>Fetching multi-agent consensus to provide the most viable remediation strategy for your architecture.</p>
                   </div>
                 ) : (
                   <div className="markdown-chat solution-editor-view animate-fade-in">

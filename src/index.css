@@ -4780,3 +4780,63 @@ a.auth-btn {
   color: #c9d1d9 !important;
 }
 
+
+/* High-Fidelity Modal Refinements */
+.modal-overlay {
+  z-index: 999999 !important; /* Absolute top priority */
+  background: rgba(0, 0, 0, 0.95) !important;
+}
+
+.sidebar-para {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.metric-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.metric-val {
+  font-size: 18px;
+  color: #58a6ff;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.metric-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+}
+
+.remedy-header-strip {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.remedy-badge {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #58a6ff;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Fix for potential visibility issue */
+.solution-modal-page {
+  animation: zoomIn 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.95) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
