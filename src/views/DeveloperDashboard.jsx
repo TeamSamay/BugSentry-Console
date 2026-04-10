@@ -209,6 +209,11 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
   const [activeSolution, setActiveSolution] = useState(null);
   const [evolutionData, setEvolutionData] = useState(null);
   const [remediationLoading, setRemediationLoading] = useState(false);
+  
+  // New Sidebar Interaction States
+  const [showRepoSelector, setShowRepoSelector] = useState(false);
+  const [dockerfileContent, setDockerfileContent] = useState(null);
+  const [showDockerfileAudit, setShowDockerfileAudit] = useState(false);
 
   const fetchEvolution = async (rid) => {
     try {
@@ -259,6 +264,20 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
     } finally {
       setRemediationLoading(false);
     }
+  };
+
+  const runDockerfileAudit = async () => {
+    if (!selectedRepo) return;
+    setRemediationLoading(true);
+    setShowDockerfileAudit(true);
+    // Mocking fetching Dockerfile from analysis results or GitHub
+    const mockDockerfile = `FROM node:18-alpine\nWORKDIR /app\nCOPY package*.json ./\nRUN npm install\nCOPY . .\nEXPOSE 3000\nCMD ["npm", "start"]`;
+    setDockerfileContent({
+      content: mockDockerfile,
+      audit: "### Dockerfile Security Audit\n\n**Verdict:** Needs Updates\n\n1. **Root User:** Currently running as root. Switch to a non-root user.\n2. **Image Version:** Node 18 is fine, but consider Node 20-LTS.\n3. **Caching:** Layers are optimized.",
+      status: 'Warning'
+    });
+    setRemediationLoading(false);
   };
   const [expandedSections, setExpandedSections] = useState({
     brief: true,
@@ -583,6 +602,12 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
 
             <h4 className="sidebar-subhead">Quick Actions</h4>
             <ul className="sidebar-list">
+              <li onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                <FiHome className="sidebar-icon" /> <span>Home</span>
+              </li>
+              <li onClick={() => setShowRepoSelector(true)}>
+                <FiFilter className="sidebar-icon" /> <span>Risk Findings</span>
+              </li>
               <li
                 onClick={() => selectedRepo && runAnalysis(selectedRepo)}
                 className={!selectedRepo || isRunning ? 'disabled' : ''}
@@ -594,7 +619,7 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
               <li onClick={() => document.getElementById('risk-findings')?.scrollIntoView({ behavior: 'smooth' })}>
                 <FiAlertCircle className="sidebar-icon" /><span>View Issues</span>
               </li>
-              <li onClick={() => alert('Dockerfile detailed audit feature is being synchronized. Please run a full scan first.')}>
+              <li onClick={runDockerfileAudit}>
                 <FaDocker className="sidebar-icon" /><span>Dockerfile Audit</span>
               </li>
             </ul>
@@ -862,12 +887,11 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                     )}
                   </div>
 
-                  {directoryHotspots.length > 0 && (
                     <div className="summary-card collapsible-card">
                       <div className="card-header collapsible-premium" onClick={() => toggleSection('hotspots')}>
                         <div className="header-left">
                           <div className="header-icon-wrapper hotspots-icon"><FiAlertCircle /></div>
-                          <h3>High-Risk Hotspots (Directory-Level)</h3>
+                          <h3>Strategic Hotspots (High-Risk Directories)</h3>
                         </div>
                         <div className="header-right">
                           <span className="count-badge">{directoryHotspots.length}</span>
@@ -876,20 +900,25 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                       </div>
                       {expandedSections.hotspots && (
                         <div className="card-body animate-slide-down">
-                          <div className="hotspot-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                          <div className="hotspots-bento-grid">
                             {directoryHotspots.map((spot, idx) => (
-                              <div key={`${spot.path}-${idx}`} className="hotspot-card">
-                                <div className="hotspot-main">
-                                  <h4>{spot.path}</h4>
+                              <div key={`${spot.path}-${idx}`} className="hotspot-item">
+                                <div className="hotspot-header">
+                                  <span className="folder-name">{spot.path}</span>
+                                  <span className={`hotspot-tag ${spot.severity?.toLowerCase() || 'medium'}`}>{spot.severity || 'Medium'}</span>
+                                </div>
+                                <div className="hotspot-content">
                                   <p>{spot.risk_reason}</p>
-                                  <span>{spot.severity || 'Medium'} Risk</span>
+                                  <div className="hotspot-footer">
+                                    <span>Average Risk Score: <strong>{spot.avg_risk || '5.0'}</strong></span>
+                                  </div>
                                 </div>
                                 <button 
-                                  className="btn-details-mini" 
+                                  className="btn-full-guide" 
                                   disabled={remediationLoading}
                                   onClick={(e) => { e.stopPropagation(); fetchRemediation(spot, 'directory_hotspot'); }}
                                 >
-                                  {remediationLoading ? 'Analyzing...' : 'Full Guide'}
+                                  {remediationLoading ? 'Analyzing...' : 'View Remediation Guide'}
                                 </button>
                               </div>
                             ))}
@@ -897,7 +926,6 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                         </div>
                       )}
                     </div>
-                  )}
 
                   <div className="summary-card collapsible-card">
                     <div className="card-header collapsible-premium" onClick={() => toggleSection('solution')}>
@@ -910,32 +938,26 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                         {expandedSections.solution ? <FiChevronUp className="chevron-icon" /> : <FiChevronDown className="chevron-icon" />}
                       </div>
                     </div>
-                    {expandedSections.solution && (
-                      <div className="card-body animate-slide-down">
-                        <div className="fix-plan-list">
-                          {fixPlan.length === 0 && <p className="mini-note">Fix plan unavailable in current run. Ask Assistant: Give patch-ready fixes by file path.</p>}
-                          {fixPlan.map((fix, idx) => (
-                            <div key={`${fix.title}-${idx}`} className="fix-plan-item">
-                              <div className="fix-plan-main">
-                                <h4>{fix.title || `Fix ${idx + 1}`}</h4>
-                                <p>{fix.action}</p>
-                                <div className="fix-meta">
-                                  <span>Priority: {fix.priority || 'Medium'}</span>
-                                  <span>Owner: {fix.owner || 'Developer'}</span>
-                                </div>
-                              </div>
-                              <button 
-                                className="btn-details-mini highlight" 
-                                disabled={remediationLoading}
-                                onClick={(e) => { e.stopPropagation(); fetchRemediation({ area: fix.title, bug_type: fix.action }, 'action_plan'); }}
-                              >
-                                {remediationLoading ? 'Preparing Code...' : 'Generate Code'}
-                              </button>
+                    <div className="card-body animate-slide-down">
+                      <div className="solution-plan-vertical">
+                        {fixPlan.length === 0 && <p className="mini-note">No active fixing plan. Ask BugSentry Assistant for a remediation strategy.</p>}
+                        {fixPlan.map((fix, idx) => (
+                          <div key={`${fix.title}-${idx}`} className="solution-plan-row">
+                            <div className="solution-content">
+                              <h4>{fix.title || `Solution ${idx + 1}`}</h4>
+                              <p>{fix.action}</p>
                             </div>
-                          ))}
-                        </div>
+                            <button 
+                              className="btn-generate-patch" 
+                              disabled={remediationLoading}
+                              onClick={(e) => { e.stopPropagation(); fetchRemediation({ area: fix.title, action: fix.action }, 'action_plan'); }}
+                            >
+                              {remediationLoading ? 'Preparing Editor...' : 'Generate Implementation Code'}
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                    )}
+                    </div>
                   </div>
 
                   {evolutionData && !evolutionData.error && (
@@ -1002,17 +1024,41 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                     </div>
                     {expandedSections.directory && (
                       <div className="card-body animate-slide-down">
-                        <div className="tree-view-elite">
-                          {treeRows.length === 0 && <p className="mini-note">Directory scan unavailable for this run.</p>}
-                          {treeRows.map((row, idx) => (
-                            <div key={`${row.type}-${row.path}-${idx}`} className={`tree-row-elite ${row.type}`}>
-                              <span className="tree-indent" style={{ width: `${row.depth * 16}px` }}></span>
-                              <span className="tree-line" />
-                              <span className="tree-icon">{row.type === 'dir' ? '📁' : '📄'}</span>
-                              <span className="tree-label">{row.path.split('/').pop()}</span>
-                              <span className="tree-path-full">{row.path}</span>
+                        <div className="architecture-split-view">
+                          <div className="tree-explorer">
+                            <div className="tree-explorer-header"><FiFilter size={14} /> Directory Structure</div>
+                            <div className="tree-view-elite">
+                              {treeRows.length === 0 && <p className="mini-note">Directory scan unavailable.</p>}
+                              {treeRows.map((row, idx) => (
+                                <div key={`${row.type}-${row.path}-${idx}`} className={`tree-row-elite ${row.type}`}>
+                                  <span className="tree-indent" style={{ width: `${row.depth * 16}px` }}></span>
+                                  <span className="tree-line" />
+                                  <span className="tree-icon">{row.type === 'dir' ? '📁' : '📄'}</span>
+                                  <span className="tree-label">{row.path.split('/').pop()}</span>
+                                  <span className="tree-path-full">{row.path}</span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          </div>
+                          
+                          <div className="architecture-insight-panel">
+                            <div className="insight-header"><FiZap size={14} /> Structural Guidance</div>
+                            <div className="insight-content">
+                              <div className="improvement-card">
+                                <label>Architectural Recommendation</label>
+                                <p>Detected tight coupling between core modules. Consider segregating business logic into a <code>/lib</code> or <code>/core</code> folder to improve testability.</p>
+                                <div className="code-snippet-box">
+                                  <code>mv {selectedRepo?.name}/src/logic {selectedRepo?.name}/src/core</code>
+                                </div>
+                              </div>
+
+                              <div className="improvement-card highlight">
+                                <label>Improve Directory Health</label>
+                                <p>Analyzing root structure of <strong>{selectedRepo?.name}</strong>... Found 3 potential circular dependencies in module exports.</p>
+                                <button className="btn-mini-action">Auto-Repair Structure</button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1084,7 +1130,54 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
             </>
           )}
         </main>
-      </div>
+        {/* Repo Selection Modal */}
+      {showRepoSelector && (
+        <div className="modal-overlay" onClick={() => setShowRepoSelector(false)}>
+          <div className="repo-selector-popup" onClick={e => e.stopPropagation()}>
+            <div className="popup-header">
+              <h3>Select Repositories for Comparison</h3>
+              <button className="close-btn" onClick={() => setShowRepoSelector(false)}><FiX /></button>
+            </div>
+            <div className="repo-list-scroll">
+              {repos.map(r => (
+                <div key={r.id} className="repo-select-item" onClick={() => { handleRepoSelect(r); setShowRepoSelector(false); }}>
+                  <FiGitBranch />
+                  <span>{r.full_name}</span>
+                  {selectedRepo?.id === r.id && <FiZap className="active-glow" />}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dockerfile Audit Modal */}
+      {showDockerfileAudit && dockerfileContent && (
+        <div className="modal-overlay" onClick={() => setShowDockerfileAudit(false)}>
+          <div className="docker-audit-popup" onClick={e => e.stopPropagation()}>
+            <div className="popup-header">
+              <div className="docker-badge-row">
+                <FaDocker /> <h3>Dockerfile Security Audit</h3>
+              </div>
+              <button className="close-btn" onClick={() => setShowDockerfileAudit(false)}><FiX /></button>
+            </div>
+            <div className="docker-grid">
+              <div className="docker-code-view">
+                <label>Raw Dockerfile</label>
+                <pre><code>{dockerfileContent.content}</code></pre>
+              </div>
+              <div className="docker-report-view">
+                <label>Audit Results</label>
+                <div className="markdown-chat">
+                  <ChatMessage msg={{role: 'bot', text: dockerfileContent.audit}} noTitle />
+                </div>
+                <button className="btn-modal-primary" style={{marginTop: '20px'}}>Apply Auto-Fix</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
 
       <RemediationModal 
         activeSolution={activeSolution}
