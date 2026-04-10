@@ -11,6 +11,7 @@ import { AnalysisBadge } from '../components/AnalysisBadge';
 import { RiskGraph, RepositoryRiskChart, ContributionGraph } from '../components/Charts';
 import { ChatMessage, TypingIndicator } from '../components/ChatComponents';
 import { SkeletonRepo } from '../components/Skeletons';
+import { RemediationModal } from '../components/RemediationModal';
 import { SYSTEM_URL, LANG_COLORS } from '../utils/constants';
 
 function extractBullets(text) {
@@ -1017,75 +1018,11 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
         </main>
       </div>
 
-      {activeSolution && (
-        <div className="modal-overlay" onClick={() => setActiveSolution(null)}>
-          <div className="solution-modal-page" onClick={e => e.stopPropagation()}>
-            <div className="modal-top-bar">
-              <div className="risk-level-badge critical">High Severity</div>
-              <h2>Security Remediation Detail</h2>
-              <button className="modal-close-icon" onClick={() => setActiveSolution(null)}>
-                <FiX size={22} />
-              </button>
-            </div>
-
-            <div className="modal-content-grid">
-              <div className="modal-sidebar-info">
-                <div className="sidebar-info-block">
-                  <label>Remediation Type</label>
-                  <span>{remediationLoading ? 'Analyzing...' : 'AI Patch Generation'}</span>
-                </div>
-                <div className="sidebar-info-block">
-                  <label>Confidence Level</label>
-                  <span>{activeSolution.confidence || 'Calculating...'}</span>
-                </div>
-                <div className="sidebar-info-block">
-                  <label>Finding Source</label>
-                  <span>{activeSolution.title?.split(':').pop() || 'Selected Context'}</span>
-                </div>
-                <div className="sidebar-info-block">
-                  <label>Security Metric</label>
-                  <div className="metric-row">
-                    <span className="metric-val">#BS-{Math.floor(Math.random() * 9000) + 1000}</span>
-                    <span className="metric-label">Audit ID</span>
-                  </div>
-                </div>
-                <div className="sidebar-info-block">
-                  <label>Executive Status</label>
-                  <p className="sidebar-para">Our 7-agent cluster has scrutinized this code block. Remediations are tailored to avoid breaking production dependencies.</p>
-                </div>
-              </div>
-
-              <div className="modal-main-remedy">
-                <div className="remedy-header-strip">
-                  <div className="remedy-badge">Security Patch v1.0</div>
-                  <div className="remedy-badge">Auto-Generated</div>
-                </div>
-                {remediationLoading ? (
-                  <div className="remediation-spinner-view">
-                    <div className="scan-spinner large" />
-                    <h3>Orchestrating Agents...</h3>
-                    <p>Fetching multi-agent consensus to provide the most viable remediation strategy for your architecture.</p>
-                  </div>
-                ) : (
-                  <div className="markdown-chat solution-editor-view animate-fade-in">
-                    <ChatMessage msg={{ role: 'bot', text: activeSolution.content }} noTitle />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="modal-bottom-actions">
-              <button className="btn-modal-secondary" onClick={() => setActiveSolution(null)}>Cancel</button>
-              <button className="btn-modal-primary" onClick={() => {
-                navigator.clipboard.writeText(activeSolution.content);
-                alert('Solution copied to clipboard!');
-              }}>
-                <FiCopy /> Copy Full Patch
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RemediationModal 
+        activeSolution={activeSolution}
+        onClose={() => setActiveSolution(null)}
+        loading={remediationLoading}
+      />
     </div>
   );
 }
