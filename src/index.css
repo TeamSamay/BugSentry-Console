@@ -3737,3 +3737,76 @@ a.auth-btn {
   margin-right: auto !important;
 }
 
+
+/* FINAL AESTHETIC POLISH - BREATHING ROOM & FULL NAMES */
+
+.dev-sidebar-left .repo-name {
+  font-size: 11px !important; /* Professional small size */
+  max-width: none !important; /* Remove truncation */
+  white-space: normal !important; /* Allow wrapping if needed */
+  line-height: 1.2 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  flex: 1 !important;
+}
+
+.dev-sidebar-left .repo-list-item {
+  margin-bottom: 4px !important; /* Tiny gap between list items */
+  padding: 8px 10px !important;
+}
+
+.dev-center-feed {
+  padding-right: 60px !important; /* Stop content from sticking to the right edge */
+  padding-left: 40px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 32px !important; /* Large vertical gap between blocks */
+}
+
+/* Add spacing specifically to dashboard blocks */
+.dev-center-feed > div,
+.dev-center-feed > section,
+.dev-center-feed > header {
+  margin-bottom: 8px !important;
+}
+
+/* Chat Spacing */
+.chat-msg {
+  margin-bottom: 20px !important; /* Prevent messages from touching */
+}
+
+.copilot-section.integrated {
+  padding-top: 20px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+
+/* FINAL REBALANCING - PERFECT HORIZONTAL SYMMETRY */
+
+.dev-center-feed {
+  padding-left: 60px !important; /* Balanced with the right side */
+  padding-right: 60px !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.dev-top-nav-inner {
+  padding-left: 60px !important; /* Align breadcrumb with content below */
+  padding-right: 60px !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+/* Ensure the assistant section doesn't shift */
+.copilot-section.integrated {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  width: 100% !important;
+  max-width: 1100px !important; /* Professional reading width */
+}
+
+/* Remove any sidebar margins pushing content */
+.dev-main-grid {
+  gap: 0 !important;
+}
+
