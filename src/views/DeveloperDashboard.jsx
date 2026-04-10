@@ -532,10 +532,12 @@ export function DeveloperDashboard({ token, onLogout, onBack }) {
                   <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>BugSentry Assistant</h3>
                 </div>
 
-                <div className="chat-history" ref={chatHistoryRef}>
-                  {chatHistory.map((msg, i) => <ChatMessage key={i} msg={msg} />)}
-                  {chatLoading && <TypingIndicator />}
-                </div>
+                {chatHistory.length > 0 && (
+                  <div className="chat-history" ref={chatHistoryRef}>
+                    {chatHistory.map((msg, i) => <ChatMessage key={i} msg={msg} />)}
+                    {chatLoading && <TypingIndicator />}
+                  </div>
+                )}
 
                 <div className="dev-ai-box copilot-input-box assistant-composer">
                   <textarea
